@@ -12,7 +12,7 @@ apiClient.interceptors.request.use(
   (config) => {
     const { user } = useAuthStore.getState()
     if (user?.accessToken && config.headers) {
-      config.headers.Authorization = \`Bearer \${user.accessToken}\`
+      config.headers.Authorization = `Bearer ${user.accessToken}`
     }
     return config
   },
@@ -66,8 +66,8 @@ apiClient.interceptors.response.use(
 
         if (data.success && data.data) {
           useAuthStore.setState({ user: data.data, isAuthenticated: true })
-          apiClient.defaults.headers.common.Authorization = \`Bearer \${data.data.accessToken}\`
-          originalRequest.headers.Authorization = \`Bearer \${data.data.accessToken}\`
+          apiClient.defaults.headers.common.Authorization = `Bearer ${data.data.accessToken}`
+          originalRequest.headers.Authorization = `Bearer ${data.data.accessToken}`
           processQueue(null, data.data.accessToken)
           return apiClient.request(originalRequest)
         } else {
