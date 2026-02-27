@@ -1,4 +1,5 @@
 import { Outlet, Link } from 'react-router-dom'
+import { Toaster } from 'react-hot-toast'
 
 export default function RootLayout() {
   return (
@@ -17,6 +18,7 @@ export default function RootLayout() {
         </div>
       </header>
       <main className="flex-grow pt-16">
+        <Toaster position="bottom-right" />
         <Outlet />
       </main>
       <footer className="border-t border-gray-100 bg-white py-8">
