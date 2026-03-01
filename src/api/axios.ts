@@ -2,7 +2,7 @@ import axios from 'axios'
 import { useAuthStore } from '../store/useAuthStore'
 
 export const apiClient = axios.create({
-  baseURL: 'http://localhost:8080/api/v1',
+  baseURL: '/api/v1',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -60,7 +60,7 @@ apiClient.interceptors.response.use(
           throw new Error('No refresh token available')
         }
 
-        const { data } = await axios.post('http://localhost:8080/api/v1/auth/refresh', {
+        const { data } = await axios.post('/api/v1/auth/refresh', {
           refreshToken: user.refreshToken,
         })
 
