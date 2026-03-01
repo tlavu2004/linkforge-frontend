@@ -10,6 +10,7 @@ export default function RootLayout() {
             LinkForge
           </Link>
           <nav className="flex space-x-6 items-center">
+            <Link to="/delete" className="text-gray-600 hover:text-primary-600 font-medium transition">Delete Link</Link>
             <Link to="/login" className="text-gray-600 hover:text-primary-600 font-medium transition">Login</Link>
             <Link to="/register" className="px-5 py-2 rounded-full bg-gray-900 hover:bg-gray-800 text-white font-medium transition shadow-sm hover:shadow-md">
               Get Started

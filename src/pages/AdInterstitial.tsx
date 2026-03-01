@@ -7,7 +7,7 @@ import { AlertCircle, Clock, ExternalLink } from 'lucide-react'
 export default function AdInterstitial() {
   const [searchParams] = useSearchParams()
   const token = searchParams.get('token')
-  const shortCode = searchParams.get('shortCode')
+  const shortCode = searchParams.get('code') || searchParams.get('shortCode')
   const navigate = useNavigate()
 
   const [timeLeft, setTimeLeft] = useState(5)
