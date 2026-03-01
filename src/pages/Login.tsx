@@ -34,9 +34,13 @@ export default function Login() {
         toast.error(data.message || 'Login failed')
       }
     } catch (err: any) {
-      setError(
-        err.response?.data?.message || 'Invalid email or password. Please try again.'
-      )
+      const message = err.response?.data?.message || 'Invalid email or password. Please try again.'
+      if (message.toLowerCase().includes('not verified')) {
+        toast.error('Please verify your email first')
+        navigate(`/verify-email?email=${encodeURIComponent(email)}`)
+        return
+      }
+      setError(message)
       toast.error('Login failed')
     } finally {
       setIsLoading(false)
@@ -90,6 +94,12 @@ export default function Login() {
               required
             />
           </div>
+        </div>
+
+        <div className="flex justify-end">
+          <Link to="/forgot-password" className="text-sm font-medium text-primary-600 hover:text-primary-500 transition-colors">
+            Forgot password?
+          </Link>
         </div>
 
         <button
