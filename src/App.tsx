@@ -18,6 +18,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/ad" element={<AdInterstitial />} />
+        <Route path="/buffer" element={<AdInterstitial />} />
 
         <Route path="/" element={<RootLayout />}>
           <Route index element={<Home />} />
