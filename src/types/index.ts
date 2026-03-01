@@ -32,3 +32,22 @@ export interface ApiResponse<T> {
   data: T
   timestamp: string
 }
+
+export interface UserLinkResponse {
+  shortCode: string
+  originalUrl: string
+  createdAt: string
+  expiresAt?: string
+  clickCount: number
+  expired: boolean
+}
+
+export interface PageResponse<T> {
+  content: T[]
+  totalPages: number
+  totalElements: number
+  number: number
+  size: number
+  first: boolean
+  last: boolean
+}
