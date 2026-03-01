@@ -12,6 +12,7 @@ export interface AuthResponse {
   accessToken: string
   refreshToken: string
   userId: number
+  name: string
   email: string
   role: 'USER' | 'ADMIN'
   vip: boolean
@@ -19,6 +20,7 @@ export interface AuthResponse {
 
 export interface RegisterResponse {
   userId: number
+  name: string
   email: string
   role: 'USER' | 'ADMIN'
   vip: boolean
