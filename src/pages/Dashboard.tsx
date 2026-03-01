@@ -1,10 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'react-hot-toast'
 import { apiClient } from '../api/axios'
-import type { ShortLinkResponse, ApiResponse } from '../types'
-import { LinkIcon, Copy, Check, ExternalLink, Loader2, AlertCircle, LayoutDashboard } from 'lucide-react'
+import type { ShortLinkResponse, ApiResponse, UserLinkResponse, PageResponse } from '../types'
+import { LinkIcon, Copy, Check, ExternalLink, Loader2, AlertCircle, LayoutDashboard, Trash2, ChevronLeft, ChevronRight, ArrowUpDown, MousePointerClick, Clock } from 'lucide-react'
 import { useAuthStore } from '../store/useAuthStore'
 import { Link } from 'react-router-dom'
+
+type SortField = 'createdAt' | 'expiresAt' | 'originalUrl' | 'clickCount'
+type SortDirection = 'asc' | 'desc'
 
 export default function Dashboard() {
   const [url, setUrl] = useState('')
@@ -13,6 +16,38 @@ export default function Dashboard() {
   const [recentLink, setRecentLink] = useState<ShortLinkResponse | null>(null)
   const [copiedUrl, setCopiedUrl] = useState(false)
   const { user } = useAuthStore()
+
+  // Link list state
+  const [links, setLinks] = useState<UserLinkResponse[]>([])
+  const [isLoadingLinks, setIsLoadingLinks] = useState(true)
+  const [page, setPage] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+  const [totalElements, setTotalElements] = useState(0)
+  const [sortBy, setSortBy] = useState<SortField>('createdAt')
+  const [direction, setDirection] = useState<SortDirection>('desc')
+  const [deletingCode, setDeletingCode] = useState<string | null>(null)
+
+  const fetchLinks = useCallback(async () => {
+    setIsLoadingLinks(true)
+    try {
+      const { data } = await apiClient.get<ApiResponse<PageResponse<UserLinkResponse>>>('/me/links', {
+        params: { page, size: 10, sortBy, direction }
+      })
+      if (data.success) {
+        setLinks(data.data.content)
+        setTotalPages(data.data.totalPages)
+        setTotalElements(data.data.totalElements)
+      }
+    } catch {
+      // silently fail — will show empty state
+    } finally {
+      setIsLoadingLinks(false)
+    }
+  }, [page, sortBy, direction])
+
+  useEffect(() => {
+    fetchLinks()
+  }, [fetchLinks])
 
   const handleShorten = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -31,6 +66,8 @@ export default function Dashboard() {
         setRecentLink(data.data)
         setUrl('')
         toast.success('Link shortened successfully!')
+        // Refresh link list
+        fetchLinks()
       } else {
         setError(data.message || 'Failed to create short link.')
         toast.error(data.message || 'Failed to create short link.')
@@ -43,7 +80,18 @@ export default function Dashboard() {
     }
   }
 
-
+  const handleDeleteLink = async (shortCode: string) => {
+    setDeletingCode(shortCode)
+    try {
+      await apiClient.delete(`/me/links/${shortCode}`)
+      toast.success('Link deleted!')
+      fetchLinks()
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to delete link.')
+    } finally {
+      setDeletingCode(null)
+    }
+  }
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
@@ -51,6 +99,38 @@ export default function Dashboard() {
     toast.success('Copied to clipboard!')
     setTimeout(() => setCopiedUrl(false), 2000)
   }
+
+  const handleSort = (field: SortField) => {
+    if (sortBy === field) {
+      setDirection(d => d === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortBy(field)
+      setDirection('desc')
+    }
+    setPage(0)
+  }
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('vi-VN', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    })
+  }
+
+  const SortButton = ({ field, label }: { field: SortField, label: string }) => (
+    <button
+      onClick={() => handleSort(field)}
+      className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-all ${sortBy === field
+          ? 'bg-primary-100 text-primary-700 shadow-sm'
+          : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700'
+        }`}
+    >
+      {label}
+      {sortBy === field && (
+        <span className="text-[10px]">{direction === 'asc' ? '↑' : '↓'}</span>
+      )}
+    </button>
+  )
 
   return (
     <div className="space-y-8">
@@ -140,11 +220,117 @@ export default function Dashboard() {
         </section>
       )}
 
-      {/* Note: In a real app we would call GET /links (which needs to be added to Backend) to list user's links here */}
-      <section className="opacity-60 pointer-events-none p-8 text-center border-2 border-dashed border-gray-200 rounded-3xl">
-        <LayoutDashboard className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-600 mb-1">Your Link History</h3>
-        <p className="text-sm text-gray-400">This feature requires a backend endpoint to list user's links. Currently not present in OpenAPI spec.</p>
+      {/* My Links Section */}
+      <section className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+              <LayoutDashboard className="w-5 h-5 text-primary-500" />
+              My Links
+            </h3>
+            <p className="text-sm text-gray-500 mt-1">{totalElements} link{totalElements !== 1 ? 's' : ''} total</p>
+          </div>
+
+          {/* Sort Controls */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <ArrowUpDown className="w-4 h-4 text-gray-400" />
+            <SortButton field="createdAt" label="Created" />
+            <SortButton field="expiresAt" label="Expires" />
+            <SortButton field="originalUrl" label="URL" />
+            <SortButton field="clickCount" label="Clicks" />
+          </div>
+        </div>
+
+        {isLoadingLinks ? (
+          <div className="flex justify-center py-16">
+            <Loader2 className="w-8 h-8 animate-spin text-primary-400" />
+          </div>
+        ) : links.length === 0 ? (
+          <div className="py-16 text-center">
+            <LinkIcon className="w-12 h-12 text-gray-200 mx-auto mb-4" />
+            <h4 className="text-lg font-medium text-gray-500 mb-1">No links yet</h4>
+            <p className="text-sm text-gray-400">Create your first short link above!</p>
+          </div>
+        ) : (
+          <>
+            <div className="space-y-3">
+              {links.map((link) => (
+                <div
+                  key={link.shortCode}
+                  className="group flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl border border-gray-100 hover:border-primary-200 hover:bg-primary-50/30 transition-all"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-semibold text-gray-900 text-sm">
+                        /r/{link.shortCode}
+                      </span>
+                      {link.expired && (
+                        <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-red-100 text-red-600">Expired</span>
+                      )}
+                    </div>
+                    <a
+                      href={link.originalUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-sm text-gray-500 truncate block hover:text-primary-600 transition max-w-xs sm:max-w-md lg:max-w-lg"
+                    >
+                      {link.originalUrl}
+                    </a>
+                  </div>
+
+                  <div className="flex items-center gap-4 text-xs text-gray-400 shrink-0">
+                    <div className="flex items-center gap-1" title="Clicks">
+                      <MousePointerClick className="w-3.5 h-3.5" />
+                      <span className="font-medium text-gray-600">{link.clickCount}</span>
+                    </div>
+                    <div className="flex items-center gap-1" title="Created">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>{formatDate(link.createdAt)}</span>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteLink(link.shortCode)}
+                      disabled={deletingCode === link.shortCode}
+                      className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+                      title="Delete link"
+                    >
+                      {deletingCode === link.shortCode
+                        ? <Loader2 className="w-4 h-4 animate-spin" />
+                        : <Trash2 className="w-4 h-4" />
+                      }
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-100">
+                <span className="text-sm text-gray-500">
+                  Page {page + 1} of {totalPages}
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setPage(p => Math.max(0, p - 1))}
+                    disabled={page === 0}
+                    className="flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    Previous
+                  </button>
+                  <button
+                    onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                    disabled={page >= totalPages - 1}
+                    className="flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Next
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </section>
     </div>
   )
