@@ -11,6 +11,7 @@ import VipUpgrade from './pages/VipUpgrade'
 import VnPayReturn from './pages/VnPayReturn'
 import AdminDashboard from './pages/AdminDashboard'
 import NotFound from './pages/NotFound'
+import DeleteLink from './pages/DeleteLink'
 
 export default function App() {
   return (
@@ -20,7 +21,7 @@ export default function App() {
 
         <Route path="/" element={<RootLayout />}>
           <Route index element={<Home />} />
-          {/* Add more routes here later */}
+          <Route path="/delete" element={<DeleteLink />} />
           <Route path="*" element={<NotFound />} />
         </Route>
 

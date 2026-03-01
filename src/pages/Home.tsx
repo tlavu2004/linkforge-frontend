@@ -144,7 +144,8 @@ export default function Home() {
                     </button>
                   </div>
                   <p className="text-xs text-gray-500 mt-2">
-                    Since you created this link as a guest, you must save this token if you ever wish to delete the link.
+                    Since you created this link as a guest, you must save this token if you ever wish to{' '}
+                    <a href="/delete" className="text-primary-600 underline hover:text-primary-700 font-medium">delete the link</a>.
                   </p>
                 </div>
               )}
