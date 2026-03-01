@@ -1,0 +1,13 @@
+services:
+  frontend:
+    build: .
+    image: ghcr.io/tlavu2004/linkforge-frontend:latest
+    container_name: linkforge-frontend
+    ports:
+      - "80:80"
+    networks:
+      - linkforge-net
+
+networks:
+  linkforge-net:
+    external: true
