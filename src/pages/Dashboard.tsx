@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'react-hot-toast'
 import { apiClient } from '../api/axios'
 import type { ShortLinkResponse, ApiResponse, UserLinkResponse, PageResponse } from '../types'
-import { LinkIcon, Copy, Check, ExternalLink, Loader2, AlertCircle, LayoutDashboard, Trash2, ChevronLeft, ChevronRight, ArrowUpDown, MousePointerClick, Clock, Search } from 'lucide-react'
+import { LinkIcon, Copy, Check, ExternalLink, Loader2, AlertCircle, LayoutDashboard, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUpDown, MousePointerClick, Clock, Search } from 'lucide-react'
 import { useAuthStore } from '../store/useAuthStore'
 import { Link } from 'react-router-dom'
 
@@ -22,6 +22,7 @@ export default function Dashboard() {
   const [links, setLinks] = useState<UserLinkResponse[]>([])
   const [isLoadingLinks, setIsLoadingLinks] = useState(true)
   const [page, setPage] = useState(0)
+  const [size, setSize] = useState(10)
   const [totalPages, setTotalPages] = useState(0)
   const [totalElements, setTotalElements] = useState(0)
   const [sortBy, setSortBy] = useState<SortField>('createdAt')
@@ -29,6 +30,7 @@ export default function Dashboard() {
   const [deletingCode, setDeletingCode] = useState<string | null>(null)
   const [keyword, setKeyword] = useState('')
   const [debouncedKeyword, setDebouncedKeyword] = useState('')
+  const [jumpPage, setJumpPage] = useState('')
 
   // Debounce search keyword
   useEffect(() => {
@@ -47,7 +49,7 @@ export default function Dashboard() {
       const { data } = await apiClient.get<ApiResponse<PageResponse<UserLinkResponse>>>('/me/links', {
         params: {
           page,
-          size: 10,
+          size,
           sortBy,
           direction,
           ...(debouncedKeyword ? { keyword: debouncedKeyword } : {})
@@ -65,7 +67,7 @@ export default function Dashboard() {
         setIsLoadingLinks(false)
       }
     }
-  }, [page, sortBy, direction, debouncedKeyword])
+  }, [page, size, sortBy, direction, debouncedKeyword])
 
   // Polling mechanism for real-time updates
   useEffect(() => {
@@ -368,27 +370,80 @@ export default function Dashboard() {
             </div>
 
             {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-100">
-                <span className="text-sm text-gray-500">
-                  Page {page + 1} of {totalPages}
-                </span>
-                <div className="flex items-center gap-2">
+            {totalPages > 0 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-6 border-t border-gray-100">
+                <div className="flex items-center gap-4 text-sm text-gray-500 flex-wrap justify-center">
+                  <span>Page {page + 1} of {totalPages}</span>
+                  <div className="flex items-center gap-2 border-l border-gray-200 pl-4">
+                    <span>Show:</span>
+                    <select
+                      value={size}
+                      onChange={(e) => {
+                        setSize(Number(e.target.value))
+                        setPage(0)
+                      }}
+                      className="bg-gray-50 border border-gray-200 text-gray-700 rounded-lg focus:ring-primary-500 focus:border-primary-500 block py-1.5 px-2 outline-none cursor-pointer"
+                    >
+                      <option value={10}>10</option>
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-center">
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      const p = parseInt(jumpPage, 10);
+                      if (!isNaN(p)) {
+                        setPage(Math.max(0, Math.min(totalPages - 1, p - 1)));
+                      }
+                      setJumpPage('');
+                    }}
+                    className="flex items-center sm:mr-2"
+                  >
+                    <input
+                      type="number"
+                      min="1"
+                      max={totalPages}
+                      value={jumpPage}
+                      onChange={(e) => setJumpPage(e.target.value)}
+                      placeholder="Go to"
+                      className="w-16 px-2 py-1.5 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    />
+                  </form>
+                  <button
+                    onClick={() => setPage(0)}
+                    disabled={page === 0}
+                    className="p-1.5 sm:p-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-gray-600"
+                    title="First Page"
+                  >
+                    <ChevronsLeft className="w-4 h-4" />
+                  </button>
                   <button
                     onClick={() => setPage(p => Math.max(0, p - 1))}
                     disabled={page === 0}
-                    className="flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    className="p-1.5 sm:p-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-gray-600"
+                    title="Previous Page"
                   >
                     <ChevronLeft className="w-4 h-4" />
-                    Previous
                   </button>
                   <button
                     onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                     disabled={page >= totalPages - 1}
-                    className="flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    className="p-1.5 sm:p-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-gray-600"
+                    title="Next Page"
                   >
-                    Next
                     <ChevronRight className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setPage(totalPages - 1)}
+                    disabled={page >= totalPages - 1}
+                    className="p-1.5 sm:p-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-gray-600"
+                    title="Last Page"
+                  >
+                    <ChevronsRight className="w-4 h-4" />
                   </button>
                 </div>
               </div>
