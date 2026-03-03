@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { apiClient } from '../api/axios'
 import type { ApiResponse } from '../types'
 import { useAuthStore } from '../store/useAuthStore'
@@ -42,27 +42,6 @@ const FEATURES = [
   'Advanced link analytics (Coming soon)',
 ]
 
-function formatRemainingTime(expiresAt: string): string {
-  const now = new Date()
-  const expiry = new Date(expiresAt)
-  const diffMs = expiry.getTime() - now.getTime()
-
-  if (diffMs <= 0) return 'Expired'
-
-  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-  const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
-  const seconds = Math.floor((diffMs % (1000 * 60)) / 1000)
-
-  const parts: string[] = []
-  if (days > 0) parts.push(`${days} day${days > 1 ? 's' : ''}`)
-  if (hours > 0) parts.push(`${hours}h`)
-  if (minutes > 0) parts.push(`${minutes}m`)
-  parts.push(`${seconds}s`)
-
-  return parts.join(' ')
-}
-
 function formatDateTime(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('vi-VN', {
     day: '2-digit', month: '2-digit', year: 'numeric',
@@ -70,11 +49,35 @@ function formatDateTime(dateStr: string): string {
   })
 }
 
+function getRemainingDays(expiresAt: string): number {
+  const diffMs = new Date(expiresAt).getTime() - Date.now()
+  return Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)))
+}
+
 export default function VipUpgrade() {
-  const { user } = useAuthStore()
+  const { user, setAuth } = useAuthStore()
   const [selectedPackage, setSelectedPackage] = useState('VIP_3_MONTHS')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+
+  // Refresh user data from backend on mount to get latest vipExpiresAt
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const { data } = await apiClient.get<ApiResponse<{ vip: boolean; vipExpiresAt: string | null }>>('/auth/me')
+        if (data.success && data.data && user) {
+          setAuth({
+            ...user,
+            vip: data.data.vip,
+            vipExpiresAt: data.data.vipExpiresAt ?? undefined,
+          })
+        }
+      } catch {
+        // Silently fail
+      }
+    }
+    fetchProfile()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!user) {
     return <Navigate to="/login" replace />
@@ -130,7 +133,7 @@ export default function VipUpgrade() {
               {user.vipExpiresAt ? (
                 <span>
                   Expires: <strong>{formatDateTime(user.vipExpiresAt)}</strong>
-                  <span className="ml-2 text-primary-600 font-semibold">({formatRemainingTime(user.vipExpiresAt)} remaining)</span>
+                  <span className="ml-2 text-primary-600 font-semibold">({getRemainingDays(user.vipExpiresAt)} days remaining)</span>
                 </span>
               ) : (
                 <span className="text-green-600 font-semibold">Permanent — No expiration</span>
