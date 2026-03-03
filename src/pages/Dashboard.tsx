@@ -39,8 +39,10 @@ export default function Dashboard() {
     return () => clearTimeout(timer)
   }, [keyword])
 
-  const fetchLinks = useCallback(async () => {
-    setIsLoadingLinks(true)
+  const fetchLinks = useCallback(async (isBackgroundUpdate = false) => {
+    if (!isBackgroundUpdate) {
+      setIsLoadingLinks(true)
+    }
     try {
       const { data } = await apiClient.get<ApiResponse<PageResponse<UserLinkResponse>>>('/me/links', {
         params: {
@@ -59,9 +61,19 @@ export default function Dashboard() {
     } catch {
       // silently fail — will show empty state
     } finally {
-      setIsLoadingLinks(false)
+      if (!isBackgroundUpdate) {
+        setIsLoadingLinks(false)
+      }
     }
   }, [page, sortBy, direction, debouncedKeyword])
+
+  // Polling mechanism for real-time updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchLinks(true)
+    }, 10000) // 10 seconds
+    return () => clearInterval(interval)
+  }, [fetchLinks])
 
   useEffect(() => {
     fetchLinks()
