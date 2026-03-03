@@ -1,10 +1,14 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
 import { apiClient } from '../api/axios'
 import type { ShortLinkResponse, ApiResponse } from '../types'
-import { Copy, Check, Link as LinkIcon, AlertCircle } from 'lucide-react'
+import { Copy, Check, Link as LinkIcon, AlertCircle, LayoutDashboard } from 'lucide-react'
+import { useAuthStore } from '../store/useAuthStore'
 
 export default function Home() {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+
   const [url, setUrl] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
@@ -70,96 +74,111 @@ export default function Home() {
           </p>
         </div>
 
-        <form onSubmit={handleShorten} className="bg-white p-2 md:p-3 rounded-2xl md:rounded-full shadow-xl flex flex-col md:flex-row items-center max-w-2xl mx-auto border border-gray-100 focus-within:ring-4 focus-within:ring-primary-100 transition-all">
-          <div className="flex-1 w-full flex items-center px-4 md:px-6 py-3 md:py-4">
-            <LinkIcon className="text-gray-400 w-5 h-5 mr-3 shrink-0" />
-            <input
-              type="url"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="Paste your long URL here... e.g., https://example.com"
-              className="w-full bg-transparent outline-none text-gray-900 placeholder:text-gray-400 font-medium text-lg"
-              required
-              disabled={isLoading}
-            />
+        {isAuthenticated ? (
+          <div className="flex flex-col items-center justify-center pt-8 fade-in">
+            <Link
+              to="/dashboard"
+              className="bg-primary-600 hover:bg-primary-700 text-white px-10 py-5 rounded-full font-bold text-xl transition-all shadow-xl hover:shadow-indigo-500/20 flex items-center justify-center gap-3 w-full md:w-auto"
+            >
+              <LayoutDashboard className="w-6 h-6" />
+              Go to Dashboard
+            </Link>
+            <p className="mt-6 text-gray-500 text-sm">You are already logged in to LinkForge.</p>
           </div>
-          <button
-            type="submit"
-            disabled={isLoading || !url}
-            className="w-full md:w-auto bg-primary-600 hover:bg-primary-700 disabled:bg-primary-300 disabled:cursor-not-allowed text-white px-8 py-4 md:py-4 rounded-xl md:rounded-full font-semibold transition-all shadow-md hover:shadow-lg flex justify-center items-center h-full"
-          >
-            {isLoading ? (
-              <span className="flex items-center">
-                <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Processing...
-              </span>
-            ) : 'Shorten Now'}
-          </button>
-        </form>
-
-        {error && (
-          <div className="max-w-2xl mx-auto bg-red-50 text-red-600 p-4 rounded-xl flex items-center text-left text-sm font-medium animate-in fade-in">
-            <AlertCircle className="w-5 h-5 mr-3 shrink-0" />
-            <p>{error}</p>
-          </div>
-        )}
-
-        {result && (
-          <div className="max-w-2xl mx-auto bg-white border border-gray-100 shadow-xl rounded-2xl p-6 md:p-8 space-y-6 animate-in zoom-in-95 duration-300">
-            <div className="space-y-4">
-              <div className="text-left">
-                <p className="text-sm text-gray-500 font-medium mb-1">Your shortened link</p>
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 bg-gray-50 text-gray-900 border border-gray-200 rounded-xl px-4 py-3 font-medium truncate text-lg">
-                    {window.location.origin}/r/{result.shortCode}
-                  </div>
-                  <button
-                    onClick={() => copyToClipboard(`${window.location.origin}/r/${result.shortCode}`, 'url')}
-                    className="shrink-0 p-3 bg-primary-50 text-primary-600 hover:bg-primary-100 rounded-xl transition flex items-center justify-center w-12 h-12"
-                    title="Copy short link"
-                  >
-                    {copiedUrl ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5" />}
-                  </button>
-                </div>
+        ) : (
+          <>
+            <form onSubmit={handleShorten} className="bg-white p-2 md:p-3 rounded-2xl md:rounded-full shadow-xl flex flex-col md:flex-row items-center max-w-2xl mx-auto border border-gray-100 focus-within:ring-4 focus-within:ring-primary-100 transition-all">
+              <div className="flex-1 w-full flex items-center px-4 md:px-6 py-3 md:py-4">
+                <LinkIcon className="text-gray-400 w-5 h-5 mr-3 shrink-0" />
+                <input
+                  type="url"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder="Paste your long URL here... e.g., https://example.com"
+                  className="w-full bg-transparent outline-none text-gray-900 placeholder:text-gray-400 font-medium text-lg"
+                  required
+                  disabled={isLoading}
+                />
               </div>
+              <button
+                type="submit"
+                disabled={isLoading || !url}
+                className="w-full md:w-auto bg-primary-600 hover:bg-primary-700 disabled:bg-primary-300 disabled:cursor-not-allowed text-white px-8 py-4 md:py-4 rounded-xl md:rounded-full font-semibold transition-all shadow-md hover:shadow-lg flex justify-center items-center h-full"
+              >
+                {isLoading ? (
+                  <span className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Processing...
+                  </span>
+                ) : 'Shorten Now'}
+              </button>
+            </form>
 
-              {result.deleteToken && (
-                <div className="text-left pt-2 border-t border-gray-100">
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm text-amber-600 font-medium">Delete Token (Save this!)</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 bg-amber-50 text-amber-900 border border-amber-200/50 rounded-xl px-4 py-3 font-mono text-sm truncate">
-                      {result.deleteToken}
+            {error && (
+              <div className="max-w-2xl mx-auto bg-red-50 text-red-600 p-4 rounded-xl flex items-center text-left text-sm font-medium animate-in fade-in">
+                <AlertCircle className="w-5 h-5 mr-3 shrink-0" />
+                <p>{error}</p>
+              </div>
+            )}
+
+            {result && (
+              <div className="max-w-2xl mx-auto bg-white border border-gray-100 shadow-xl rounded-2xl p-6 md:p-8 space-y-6 animate-in zoom-in-95 duration-300">
+                <div className="space-y-4">
+                  <div className="text-left">
+                    <p className="text-sm text-gray-500 font-medium mb-1">Your shortened link</p>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 bg-gray-50 text-gray-900 border border-gray-200 rounded-xl px-4 py-3 font-medium truncate text-lg">
+                        {window.location.origin}/r/{result.shortCode}
+                      </div>
+                      <button
+                        onClick={() => copyToClipboard(`${window.location.origin}/r/${result.shortCode}`, 'url')}
+                        className="shrink-0 p-3 bg-primary-50 text-primary-600 hover:bg-primary-100 rounded-xl transition flex items-center justify-center w-12 h-12"
+                        title="Copy short link"
+                      >
+                        {copiedUrl ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5" />}
+                      </button>
                     </div>
-                    <button
-                      onClick={() => copyToClipboard(result.deleteToken!, 'token')}
-                      className="shrink-0 p-3 bg-amber-100 text-amber-700 hover:bg-amber-200 rounded-xl transition flex items-center justify-center w-12 h-12"
-                      title="Copy delete token"
-                    >
-                      {copiedToken ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5" />}
-                    </button>
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Since you created this link as a guest, you must save this token if you ever wish to{' '}
-                    <a href="/delete" className="text-primary-600 underline hover:text-primary-700 font-medium">delete the link</a>.
+
+                  {result.deleteToken && (
+                    <div className="text-left pt-2 border-t border-gray-100">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-sm text-amber-600 font-medium">Delete Token (Save this!)</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 bg-amber-50 text-amber-900 border border-amber-200/50 rounded-xl px-4 py-3 font-mono text-sm truncate">
+                          {result.deleteToken}
+                        </div>
+                        <button
+                          onClick={() => copyToClipboard(result.deleteToken!, 'token')}
+                          className="shrink-0 p-3 bg-amber-100 text-amber-700 hover:bg-amber-200 rounded-xl transition flex items-center justify-center w-12 h-12"
+                          title="Copy delete token"
+                        >
+                          {copiedToken ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5" />}
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">
+                        Since you created this link as a guest, you must save this token if you ever wish to{' '}
+                        <a href="/delete" className="text-primary-600 underline hover:text-primary-700 font-medium">delete the link</a>.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="bg-blue-50/50 rounded-xl p-4 text-left border border-blue-100">
+                  <p className="text-sm text-blue-800">
+                    <span className="font-semibold flex items-center"><LinkIcon className="inline w-4 h-4 mr-1" />Original:</span>
+                    <a href={result.originalUrl} target="_blank" rel="noreferrer" className="underline truncate block max-w-full mt-1 hover:text-primary-600 transition">
+                      {result.originalUrl}
+                    </a>
                   </p>
                 </div>
-              )}
-            </div>
-
-            <div className="bg-blue-50/50 rounded-xl p-4 text-left border border-blue-100">
-              <p className="text-sm text-blue-800">
-                <span className="font-semibold flex items-center"><LinkIcon className="inline w-4 h-4 mr-1" />Original:</span>
-                <a href={result.originalUrl} target="_blank" rel="noreferrer" className="underline truncate block max-w-full mt-1 hover:text-primary-600 transition">
-                  {result.originalUrl}
-                </a>
-              </p>
-            </div>
-          </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div >

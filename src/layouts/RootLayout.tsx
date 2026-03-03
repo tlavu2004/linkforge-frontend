@@ -1,9 +1,24 @@
-import { Outlet, Link } from 'react-router-dom'
+import { Outlet, Link, useNavigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { useAuthStore } from '../store/useAuthStore'
+import { apiClient } from '../api/axios'
 
 export default function RootLayout() {
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+  const { isAuthenticated, user, clearAuth } = useAuthStore()
+  const navigate = useNavigate()
+
+  const handleLogout = async () => {
+    try {
+      if (user?.refreshToken) {
+        await apiClient.post('/auth/logout', { refreshToken: user.refreshToken })
+      }
+    } catch (error) {
+      console.error('Logout failed', error)
+    } finally {
+      clearAuth()
+      navigate('/')
+    }
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 text-gray-900">
@@ -14,9 +29,14 @@ export default function RootLayout() {
           </Link>
           <nav className="flex space-x-6 items-center">
             {isAuthenticated ? (
-              <Link to="/dashboard" className="px-5 py-2 rounded-full bg-primary-600 hover:bg-primary-700 text-white font-medium transition shadow-sm hover:shadow-md">
-                Dashboard
-              </Link>
+              <>
+                <Link to="/dashboard" className="px-5 py-2 rounded-full bg-primary-600 hover:bg-primary-700 text-white font-medium transition shadow-sm hover:shadow-md">
+                  Dashboard
+                </Link>
+                <button onClick={handleLogout} className="px-5 py-2 rounded-full border border-gray-200 hover:bg-red-50 hover:border-red-100 text-red-600 font-medium transition shadow-sm hover:shadow-md">
+                  Logout
+                </button>
+              </>
             ) : (
               <>
                 <Link to="/delete" className="text-gray-600 hover:text-primary-600 font-medium transition">Delete Link</Link>
