@@ -1,7 +1,10 @@
 import { Outlet, Link } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
+import { useAuthStore } from '../store/useAuthStore'
 
 export default function RootLayout() {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 text-gray-900">
       <header className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-gray-100 z-50">
@@ -10,11 +13,19 @@ export default function RootLayout() {
             LinkForge
           </Link>
           <nav className="flex space-x-6 items-center">
-            <Link to="/delete" className="text-gray-600 hover:text-primary-600 font-medium transition">Delete Link</Link>
-            <Link to="/login" className="text-gray-600 hover:text-primary-600 font-medium transition">Login</Link>
-            <Link to="/register" className="px-5 py-2 rounded-full bg-gray-900 hover:bg-gray-800 text-white font-medium transition shadow-sm hover:shadow-md">
-              Get Started
-            </Link>
+            {isAuthenticated ? (
+              <Link to="/dashboard" className="px-5 py-2 rounded-full bg-primary-600 hover:bg-primary-700 text-white font-medium transition shadow-sm hover:shadow-md">
+                Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link to="/delete" className="text-gray-600 hover:text-primary-600 font-medium transition">Delete Link</Link>
+                <Link to="/login" className="text-gray-600 hover:text-primary-600 font-medium transition">Login</Link>
+                <Link to="/register" className="px-5 py-2 rounded-full bg-gray-900 hover:bg-gray-800 text-white font-medium transition shadow-sm hover:shadow-md">
+                  Get Started
+                </Link>
+              </>
+            )}
           </nav>
         </div>
       </header>
