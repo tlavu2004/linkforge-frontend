@@ -81,7 +81,7 @@ export default function DashboardLayout() {
           <header className="flex items-center justify-between pb-4 border-b border-gray-100 rounded-b-2xl md:rounded-b-none bg-white md:bg-transparent -mx-4 px-4 md:mx-0 md:px-0 pt-4 md:pt-0 sticky top-0 z-30 md:static">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-              <p className="text-sm text-gray-500">Welcome back, {user?.email}</p>
+              <p className="text-sm text-gray-500">Welcome back, {user?.name}</p>
             </div>
 
             <div className="flex items-center gap-3">
