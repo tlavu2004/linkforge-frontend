@@ -392,27 +392,30 @@ export default function Dashboard() {
                 </div>
 
                 <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-center">
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      const p = parseInt(jumpPage, 10);
-                      if (!isNaN(p)) {
-                        setPage(Math.max(0, Math.min(totalPages - 1, p - 1)));
-                      }
-                      setJumpPage('');
-                    }}
-                    className="flex items-center sm:mr-2"
-                  >
-                    <input
-                      type="number"
-                      min="1"
-                      max={totalPages}
-                      value={jumpPage}
-                      onChange={(e) => setJumpPage(e.target.value)}
-                      placeholder="Go to"
-                      className="w-16 px-2 py-1.5 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    />
-                  </form>
+                  <div className="flex items-center mx-1 sm:mx-2 text-sm text-gray-500">
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        const p = parseInt(jumpPage, 10);
+                        if (!isNaN(p)) {
+                          setPage(Math.max(0, Math.min(totalPages - 1, p - 1)));
+                        }
+                        setJumpPage("");
+                      }}
+                      className="flex items-center"
+                    >
+                      <input
+                        type="number"
+                        min="1"
+                        max={totalPages}
+                        value={jumpPage}
+                        onChange={(e) => setJumpPage(e.target.value)}
+                        placeholder="..."
+                        className="w-12 px-1 py-1 text-center text-sm border border-gray-200 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 hide-arrows"
+                      />
+                    </form>
+                    <span className="ml-1.5">/ {totalPages}</span>
+                  </div>
                   <button
                     onClick={() => setPage(0)}
                     disabled={page === 0}
