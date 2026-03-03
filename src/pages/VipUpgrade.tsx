@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { apiClient } from '../api/axios'
 import type { ApiResponse } from '../types'
 import { useAuthStore } from '../store/useAuthStore'
-import { Crown, CheckCircle2, Shield, Zap, Info, Loader2, AlertCircle, Star, Sparkles } from 'lucide-react'
+import { Crown, CheckCircle2, Shield, Zap, Info, Loader2, AlertCircle, Star, Sparkles, Clock } from 'lucide-react'
 import { Navigate } from 'react-router-dom'
 
 const PACKAGES = [
@@ -42,6 +42,34 @@ const FEATURES = [
   'Advanced link analytics (Coming soon)',
 ]
 
+function formatRemainingTime(expiresAt: string): string {
+  const now = new Date()
+  const expiry = new Date(expiresAt)
+  const diffMs = expiry.getTime() - now.getTime()
+
+  if (diffMs <= 0) return 'Expired'
+
+  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+  const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
+  const seconds = Math.floor((diffMs % (1000 * 60)) / 1000)
+
+  const parts: string[] = []
+  if (days > 0) parts.push(`${days} day${days > 1 ? 's' : ''}`)
+  if (hours > 0) parts.push(`${hours}h`)
+  if (minutes > 0) parts.push(`${minutes}m`)
+  parts.push(`${seconds}s`)
+
+  return parts.join(' ')
+}
+
+function formatDateTime(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString('vi-VN', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+  })
+}
+
 export default function VipUpgrade() {
   const { user } = useAuthStore()
   const [selectedPackage, setSelectedPackage] = useState('VIP_3_MONTHS')
@@ -50,6 +78,11 @@ export default function VipUpgrade() {
 
   if (!user) {
     return <Navigate to="/login" replace />
+  }
+
+  // Admin has permanent VIP — redirect to dashboard
+  if (user.role === 'ADMIN') {
+    return <Navigate to="/dashboard" replace />
   }
 
   const handleUpgrade = async () => {
@@ -84,6 +117,29 @@ export default function VipUpgrade() {
         <p className="text-lg text-gray-500 max-w-2xl mx-auto">Get exclusive features, bypass ads on all your short links, and supercharge your LinkForge account.</p>
       </div>
 
+      {/* VIP Status Banner */}
+      {user.vip && (
+        <div className="bg-gradient-to-r from-amber-50 to-primary-50 rounded-2xl p-5 border border-amber-200 flex flex-col sm:flex-row items-center gap-4">
+          <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center shrink-0">
+            <Crown className="w-6 h-6" />
+          </div>
+          <div className="flex-1 text-center sm:text-left">
+            <h3 className="font-bold text-gray-900">VIP Active</h3>
+            <div className="flex items-center gap-2 text-sm text-gray-600 mt-1 justify-center sm:justify-start">
+              <Clock className="w-4 h-4 text-amber-500" />
+              {user.vipExpiresAt ? (
+                <span>
+                  Expires: <strong>{formatDateTime(user.vipExpiresAt)}</strong>
+                  <span className="ml-2 text-primary-600 font-semibold">({formatRemainingTime(user.vipExpiresAt)} remaining)</span>
+                </span>
+              ) : (
+                <span className="text-green-600 font-semibold">Permanent — No expiration</span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Package Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {PACKAGES.map((pkg) => {
@@ -92,13 +148,11 @@ export default function VipUpgrade() {
             <button
               key={pkg.code}
               onClick={() => setSelectedPackage(pkg.code)}
-              disabled={!!user.vip}
               className={`relative text-left rounded-2xl p-6 border-2 transition-all duration-300 cursor-pointer
                 ${isSelected
                   ? 'border-primary-500 bg-primary-50/60 shadow-lg shadow-primary-100 scale-[1.03]'
                   : 'border-gray-200 bg-white hover:border-primary-200 hover:shadow-md'
                 }
-                ${user.vip ? 'opacity-60 cursor-not-allowed' : ''}
               `}
             >
               {/* Badge */}
@@ -177,20 +231,22 @@ export default function VipUpgrade() {
         </div>
 
         <div className="w-full md:w-80 bg-gray-50 rounded-2xl p-6 border border-gray-100 relative shadow-sm text-center">
-          {user.vip ? (
+          {user.vip && !user.vipExpiresAt ? (
             <div className="space-y-4">
               <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Shield className="w-8 h-8" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900">You are a VIP!</h3>
-              <p className="text-gray-500 text-sm">Thank you for supporting LinkForge. You have access to all premium features.</p>
+              <h3 className="text-xl font-bold text-gray-900">Permanent VIP!</h3>
+              <p className="text-gray-500 text-sm">You have lifetime access to all premium features. No renewal needed.</p>
               <button disabled className="w-full bg-gray-200 text-gray-500 font-bold py-4 rounded-xl cursor-not-allowed">Active Plan</button>
             </div>
           ) : (
             <div className="space-y-6">
               <Zap className="w-12 h-12 text-primary-500 mx-auto" />
               <div>
-                <h3 className="text-xl font-bold text-gray-900 mb-1">Ready to upgrade?</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-1">
+                  {user.vip ? 'Extend your VIP' : 'Ready to upgrade?'}
+                </h3>
                 <p className="text-gray-500 text-sm mb-3">Secure payment powered by VNPay.</p>
                 <div className="bg-white rounded-xl border border-gray-200 px-4 py-3">
                   <p className="text-xs text-gray-400 uppercase tracking-wide">You pay</p>
@@ -214,7 +270,7 @@ export default function VipUpgrade() {
                     Processing...
                   </>
                 ) : (
-                  'Upgrade with VNPay'
+                  user.vip ? 'Extend with VNPay' : 'Upgrade with VNPay'
                 )}
               </button>
 

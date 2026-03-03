@@ -16,6 +16,7 @@ export interface AuthResponse {
   email: string
   role: 'USER' | 'ADMIN'
   vip: boolean
+  vipExpiresAt?: string
 }
 
 export interface RegisterResponse {

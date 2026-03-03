@@ -44,13 +44,15 @@ export default function DashboardLayout() {
             <span className="text-[10px] md:text-sm">Dashboard</span>
           </Link>
 
-          <Link
-            to="/vip-upgrade"
-            className="flex flex-col md:flex-row items-center gap-1 md:gap-3 p-2 md:px-4 md:py-3 rounded-xl hover:bg-amber-50 text-amber-700 font-medium transition-colors"
-          >
-            <Star className="w-6 h-6 md:w-5 md:h-5 text-amber-500" />
-            <span className="text-[10px] md:text-sm">Upgrade VIP</span>
-          </Link>
+          {user?.role !== 'ADMIN' && (
+            <Link
+              to="/vip-upgrade"
+              className="flex flex-col md:flex-row items-center gap-1 md:gap-3 p-2 md:px-4 md:py-3 rounded-xl hover:bg-amber-50 text-amber-700 font-medium transition-colors"
+            >
+              <Star className="w-6 h-6 md:w-5 md:h-5 text-amber-500" />
+              <span className="text-[10px] md:text-sm">Upgrade VIP</span>
+            </Link>
+          )}
 
           {user?.role === 'ADMIN' && (
             <Link
