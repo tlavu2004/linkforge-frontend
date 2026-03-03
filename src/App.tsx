@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard'
 import AdInterstitial from './pages/AdInterstitial'
 import VipUpgrade from './pages/VipUpgrade'
 import VnPayReturn from './pages/VnPayReturn'
+import PaymentSuccess from './pages/PaymentSuccess'
 import AdminDashboard from './pages/AdminDashboard'
 import NotFound from './pages/NotFound'
 import DeleteLink from './pages/DeleteLink'
@@ -21,6 +22,7 @@ export default function App() {
       <Routes>
         <Route path="/ad" element={<AdInterstitial />} />
         <Route path="/buffer" element={<AdInterstitial />} />
+        <Route path="/payment-success" element={<PaymentSuccess />} />
 
         <Route path="/" element={<RootLayout />}>
           <Route index element={<Home />} />
