@@ -1,4 +1,4 @@
-import { Outlet, Navigate, Link, useNavigate } from 'react-router-dom'
+import { Outlet, Navigate, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../store/useAuthStore'
 import { apiClient } from '../api/axios'
 import { Toaster } from 'react-hot-toast'
@@ -7,6 +7,7 @@ import { LayoutDashboard, LogOut, ShieldCheck, Star } from 'lucide-react'
 export default function DashboardLayout() {
   const { isAuthenticated, user, clearAuth } = useAuthStore()
   const navigate = useNavigate()
+  const location = useLocation()
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
@@ -80,10 +81,14 @@ export default function DashboardLayout() {
       <main className="flex-1 p-4 md:p-8 md:ml-0 md:pb-8">
         <Toaster position="bottom-right" />
         <div className="max-w-6xl mx-auto space-y-6">
-          <header className="flex items-center justify-between pb-4 border-b border-gray-100 rounded-b-2xl md:rounded-b-none bg-white md:bg-transparent -mx-4 px-4 md:mx-0 md:px-0 pt-4 md:pt-0 sticky top-0 z-30 md:static">
+          <header className={`flex items-center justify-between pb-4 border-b border-gray-100 rounded-b-2xl md:rounded-b-none bg-white md:bg-transparent -mx-4 px-4 md:mx-0 md:px-0 pt-4 md:pt-0 sticky top-0 z-30 md:static ${location.pathname.includes('/vip-upgrade') || location.pathname.includes('/payment-success') ? 'border-none pb-0' : ''}`}>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-              <p className="text-sm text-gray-500">Welcome back, {user?.name}</p>
+              {!(location.pathname.includes('/vip-upgrade') || location.pathname.includes('/payment-success')) && (
+                <>
+                  <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+                  <p className="text-sm text-gray-500">Welcome back, {user?.name}</p>
+                </>
+              )}
             </div>
 
             <div className="flex items-center gap-3">

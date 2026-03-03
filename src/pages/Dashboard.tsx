@@ -212,7 +212,7 @@ export default function Dashboard() {
             </div>
           )}
 
-          {!user?.vip && (
+          {!user?.vip && user?.role !== 'ADMIN' && (
             <div className="mt-6 flex items-center rounded-xl bg-amber-50/80 border border-amber-100 p-4 text-sm text-amber-800">
               <Star className="w-5 h-5 mr-3 text-amber-500 shrink-0" />
               <p>Want to completely bypass advertisement pages for your visitors? <Link to="/vip-upgrade" className="font-semibold underline hover:text-amber-900 text-amber-700">Upgrade to VIP today!</Link></p>
