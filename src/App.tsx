@@ -12,6 +12,8 @@ import VnPayReturn from './pages/VnPayReturn'
 import AdminDashboard from './pages/AdminDashboard'
 import NotFound from './pages/NotFound'
 import DeleteLink from './pages/DeleteLink'
+import VerifyEmail from './pages/VerifyEmail'
+import ForgotPassword from './pages/ForgotPassword'
 
 export default function App() {
   return (
@@ -29,6 +31,8 @@ export default function App() {
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
         </Route>
 
         <Route element={<DashboardLayout />}>

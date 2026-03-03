@@ -28,7 +28,7 @@ export default function DashboardLayout() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row pb-16 md:pb-0">
       {/* Sidebar - desktop / Bottom bar - mobile */}
-      <aside className="fixed bottom-0 left-0 right-0 md:relative md:w-64 bg-white border-t md:border-r border-gray-200 z-40 flex md:flex-col justify-around md:justify-start pt-2 px-2 md:p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] md:shadow-none">
+      <aside className="fixed bottom-0 left-0 right-0 md:sticky md:top-0 md:h-screen md:w-64 bg-white border-t md:border-r border-gray-200 z-40 flex md:flex-col justify-around md:justify-start pt-2 px-2 md:p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] md:shadow-none">
         <div className="hidden md:flex items-center mb-8 px-2 pl-4">
           <Link to="/" className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-indigo-600">
             LinkForge
@@ -81,7 +81,7 @@ export default function DashboardLayout() {
           <header className="flex items-center justify-between pb-4 border-b border-gray-100 rounded-b-2xl md:rounded-b-none bg-white md:bg-transparent -mx-4 px-4 md:mx-0 md:px-0 pt-4 md:pt-0 sticky top-0 z-30 md:static">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-              <p className="text-sm text-gray-500">Welcome back, {user?.email}</p>
+              <p className="text-sm text-gray-500">Welcome back, {user?.name}</p>
             </div>
 
             <div className="flex items-center gap-3">

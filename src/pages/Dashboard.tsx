@@ -15,6 +15,7 @@ export default function Dashboard() {
   const [error, setError] = useState('')
   const [recentLink, setRecentLink] = useState<ShortLinkResponse | null>(null)
   const [copiedUrl, setCopiedUrl] = useState(false)
+  const [copiedLinkUrl, setCopiedLinkUrl] = useState<string | null>(null)
   const { user } = useAuthStore()
 
   // Link list state
@@ -100,6 +101,13 @@ export default function Dashboard() {
     setTimeout(() => setCopiedUrl(false), 2000)
   }
 
+  const copyLinkToClipboard = (shortCode: string) => {
+    navigator.clipboard.writeText(window.location.origin + '/r/' + shortCode)
+    setCopiedLinkUrl(shortCode)
+    toast.success('Copied to clipboard!')
+    setTimeout(() => setCopiedLinkUrl(null), 2000)
+  }
+
   const handleSort = (field: SortField) => {
     if (sortBy === field) {
       setDirection(d => d === 'asc' ? 'desc' : 'asc')
@@ -121,8 +129,8 @@ export default function Dashboard() {
     <button
       onClick={() => handleSort(field)}
       className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-all ${sortBy === field
-          ? 'bg-primary-100 text-primary-700 shadow-sm'
-          : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700'
+        ? 'bg-primary-100 text-primary-700 shadow-sm'
+        : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700'
         }`}
     >
       {label}
@@ -261,9 +269,16 @@ export default function Dashboard() {
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold text-gray-900 text-sm">
-                        /r/{link.shortCode}
+                      <span className="font-semibold text-gray-900 text-sm bg-gray-100 px-2 py-1 rounded-md">
+                        {link.shortCode}
                       </span>
+                      <button
+                        onClick={() => copyLinkToClipboard(link.shortCode)}
+                        className="p-1.5 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-md transition-colors"
+                        title="Copy short link"
+                      >
+                        {copiedLinkUrl === link.shortCode ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
+                      </button>
                       {link.expired && (
                         <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-red-100 text-red-600">Expired</span>
                       )}
@@ -286,6 +301,10 @@ export default function Dashboard() {
                     <div className="flex items-center gap-1" title="Created">
                       <Clock className="w-3.5 h-3.5" />
                       <span>{formatDate(link.createdAt)}</span>
+                    </div>
+                    <div className="hidden sm:flex items-center gap-1 border-l border-gray-200 pl-4 ml-2" title="Expires">
+                      <Clock className="w-3.5 h-3.5 text-amber-500" />
+                      <span>{link.expiresAt ? formatDate(link.expiresAt) : 'Never'}</span>
                     </div>
                     <button
                       onClick={() => handleDeleteLink(link.shortCode)}
