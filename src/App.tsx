@@ -11,6 +11,7 @@ import VipUpgrade from './pages/VipUpgrade'
 import VnPayReturn from './pages/VnPayReturn'
 import PaymentSuccess from './pages/PaymentSuccess'
 import AdminDashboard from './pages/AdminDashboard'
+import AdminUserLinks from './pages/AdminUserLinks'
 import NotFound from './pages/NotFound'
 import DeleteLink from './pages/DeleteLink'
 import VerifyEmail from './pages/VerifyEmail'
@@ -42,7 +43,9 @@ export default function App() {
           <Route path="/vip-upgrade" element={<VipUpgrade />} />
           <Route path="/vnpay-return" element={<VnPayReturn />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/users/:userId/links" element={<AdminUserLinks />} />
         </Route>
+
       </Routes>
     </BrowserRouter>
   )

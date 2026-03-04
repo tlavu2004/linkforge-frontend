@@ -1,122 +1,270 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { apiClient } from '../api/axios'
-import type { ApiResponse } from '../types'
+import type { ApiResponse, PageResponse, AdminUserResponse } from '../types'
 import { useAuthStore } from '../store/useAuthStore'
-import { ShieldAlert, Search, ShieldCheck, ShieldBan, Loader2, AlertCircle } from 'lucide-react'
-import { Navigate } from 'react-router-dom'
+import { Search, ChevronLeft, ChevronRight, Loader2, AlertCircle, LayoutDashboard } from 'lucide-react'
+import { Navigate, useNavigate } from 'react-router-dom'
 
 export default function AdminDashboard() {
   const { user } = useAuthStore()
-  const [userId, setUserId] = useState('')
+  const navigate = useNavigate()
+  const [users, setUsers] = useState<AdminUserResponse[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
+  const [search, setSearch] = useState('')
+  const [page, setPage] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+  const [togglingVipFor, setTogglingVipFor] = useState<string | null>(null)
 
-  // Protect route
+  const fetchUsers = useCallback(async (keyword = search, pageNumber = page) => {
+    setIsLoading(true)
+    setError('')
+    try {
+      const { data } = await apiClient.get<ApiResponse<PageResponse<AdminUserResponse>>>('/admin/users', {
+        params: {
+          keyword: keyword || undefined,
+          page: pageNumber,
+          size: 10,
+          sortBy: 'id',
+          direction: 'desc'
+        }
+      })
+      if (data.success) {
+        setUsers(data.data.content)
+        setTotalPages(data.data.totalPages)
+      } else {
+        setError(data.message || 'Failed to fetch users')
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'An error occurred while fetching users')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [search, page])
+
+  useEffect(() => {
+    if (user && user.role === 'ADMIN') {
+      fetchUsers(search, page)
+    }
+  }, [page, user, fetchUsers]) // fetchUsers will be updated correctly due to useCallback
+
+  useEffect(() => {
+    if (user && user.role === 'ADMIN') {
+      const handler = setTimeout(() => {
+        setPage(0)
+        fetchUsers(search, 0)
+      }, 500)
+      return () => clearTimeout(handler)
+    }
+  }, [search, user, fetchUsers])
+
   if (!user || user.role !== 'ADMIN') {
     return <Navigate to="/dashboard" replace />
   }
 
-  const handleToggleVip = async (e: React.FormEvent, makeVip: boolean) => {
-    e.preventDefault()
-    if (!userId) return
+  const handleToggleVip = async (e: React.MouseEvent, targetUser: AdminUserResponse) => {
+    e.stopPropagation() // Prevent row click
+    if (togglingVipFor === targetUser.id) return
 
-    setIsLoading(true)
-    setError('')
-    setSuccess('')
+    setTogglingVipFor(targetUser.id)
+    const newVipStatus = !targetUser.vip
 
     try {
-      // POST /admin/users/{userId}/vip/toggle
-      const { data } = await apiClient.post<ApiResponse<void>>(`/admin/users/${userId}/vip/toggle`, {
-        vip: makeVip
+      const { data } = await apiClient.post<ApiResponse<void>>(`/admin/users/${targetUser.id}/vip/toggle`, {
+        vip: newVipStatus
       })
 
       if (data.success) {
-        setSuccess(`Successfully ${makeVip ? 'granted' : 'revoked'} VIP status for User ID: ${userId}`)
-        setUserId('')
+        setUsers(users.map(u => u.id === targetUser.id ? { ...u, vip: newVipStatus } : u))
       } else {
         setError(data.message || 'Failed to toggle VIP status.')
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'An error occurred while toggling VIP status.')
     } finally {
-      setIsLoading(false)
+      setTogglingVipFor(null)
     }
   }
 
+  const navigateToUserLinks = (userId: string) => {
+    navigate(`/admin/users/${userId}/links`)
+  }
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return '-'
+    return new Date(dateString).toLocaleDateString()
+  }
+
   return (
-    <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-8 animate-in fade-in duration-500">
 
-      <div className="bg-red-50 border border-red-100 rounded-2xl p-6 md:p-8 flex items-start gap-4 shadow-sm">
-        <ShieldAlert className="w-8 h-8 text-red-500 shrink-0 mt-1" />
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
-          <p className="text-gray-700">You are viewing this page because you have the <span className="font-bold text-red-600">ADMIN</span> role. Actions taken here directly affect user accounts.</p>
-        </div>
-      </div>
+      {/* Light Theme Container Matching Dashboard */}
+      <section className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 flex flex-col min-h-[600px] relative overflow-hidden">
 
-      <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 flex flex-col items-center">
+        {/* Subtle background flair similar to Dashboard */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 opacity-50 pointer-events-none" />
 
-        <div className="w-full max-w-lg space-y-6">
-          <div className="text-center space-y-2 mb-8">
-            <h2 className="text-xl font-bold text-gray-900">Manage VIP Status</h2>
-            <p className="text-sm text-gray-500">Enter a User ID to manually grant or revoke their VIP privileges.</p>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 relative">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <LayoutDashboard className="w-6 h-6 text-primary-500" />
+              Manage Users
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">View and manage system users and VIP access</p>
           </div>
 
-          <form className="space-y-6">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-gray-400" />
-              </div>
-              <input
-                type="number"
-                value={userId}
-                onChange={(e) => setUserId(e.target.value)}
-                placeholder="Enter User ID..."
-                className="w-full bg-gray-50 outline-none text-gray-900 placeholder:text-gray-400 font-medium text-lg pl-12 pr-4 py-4 rounded-xl border border-gray-200 focus:bg-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                required
-                min="1"
-                disabled={isLoading}
-              />
+          <div className="relative w-full md:w-80">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-5 w-5 text-gray-400" />
             </div>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by name or email..."
+              className="w-full bg-gray-50 text-gray-900 placeholder:text-gray-400 rounded-xl pl-10 pr-4 py-3 border border-gray-200 outline-none focus:bg-white focus:border-primary-500 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all font-medium text-sm"
+            />
+          </div>
+        </div>
 
-            <div className="flex flex-col sm:flex-row gap-4">
-              <button
-                type="button"
-                onClick={(e) => handleToggleVip(e, true)}
-                disabled={isLoading || !userId}
-                className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white font-bold py-4 px-6 rounded-xl shadow-md transition-all flex justify-center items-center gap-2"
-              >
-                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShieldCheck className="w-5 h-5" />}
-                Grant VIP
-              </button>
-              <button
-                type="button"
-                onClick={(e) => handleToggleVip(e, false)}
-                disabled={isLoading || !userId}
-                className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-white font-bold py-4 px-6 rounded-xl shadow-md transition-all flex justify-center items-center gap-2"
-              >
-                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShieldBan className="w-5 h-5" />}
-                Revoke VIP
-              </button>
-            </div>
-          </form>
-
-          {error && (
-            <div className="mt-4 bg-red-50 border border-red-100 text-red-600 p-4 rounded-xl flex items-center text-sm font-medium animate-in fade-in">
+        {error && (
+          <div className="mb-6 bg-red-50 border border-red-100 text-red-600 p-4 rounded-xl flex items-center justify-between text-sm font-medium animate-in fade-in relative">
+            <div className="flex items-center">
               <AlertCircle className="w-5 h-5 mr-3 shrink-0" />
               <p>{error}</p>
             </div>
-          )}
+            <button onClick={() => setError('')} className="text-red-500 hover:text-red-700">&times;</button>
+          </div>
+        )}
 
-          {success && (
-            <div className="mt-4 bg-green-50 border border-green-100 text-green-700 p-4 rounded-xl flex items-center text-sm font-medium animate-in fade-in">
-              <ShieldCheck className="w-5 h-5 mr-3 shrink-0" />
-              <p>{success}</p>
-            </div>
-          )}
+        <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm flex-1 relative z-10">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm whitespace-nowrap">
+              <thead className="bg-gray-50 text-gray-500 text-xs font-semibold tracking-wider uppercase border-b border-gray-100">
+                <tr>
+                  <th className="px-6 py-4">ID</th>
+                  <th className="px-6 py-4">Username</th>
+                  <th className="px-6 py-4">Email</th>
+                  <th className="px-6 py-4">Role</th>
+                  <th className="px-6 py-4">VIP Access</th>
+                  <th className="px-6 py-4">Expiration</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 text-gray-700">
+                {isLoading && users.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center">
+                      <div className="flex flex-col items-center justify-center text-gray-500">
+                        <Loader2 className="h-8 w-8 animate-spin mb-4 text-primary-500" />
+                        <span className="font-medium">Loading users...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : users.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500 font-medium tracking-wide">
+                      No users found.
+                    </td>
+                  </tr>
+                ) : (
+                  users.map((u) => (
+                    <tr
+                      key={u.id}
+                      onClick={() => navigateToUserLinks(u.id)}
+                      className="hover:bg-primary-50/50 hover:cursor-pointer transition-colors duration-200 group"
+                    >
+                      <td className="px-6 py-4 font-medium text-gray-900">{u.id}</td>
+                      <td className="px-6 py-4">{u.username}</td>
+                      <td className="px-6 py-4 text-gray-500 group-hover:text-primary-600 transition-colors">{u.email}</td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold leading-none ${u.role === 'ADMIN'
+                            ? 'bg-red-50 text-red-600 border border-red-100'
+                            : 'bg-indigo-50 text-indigo-600 border border-indigo-100'
+                          }`}>
+                          {u.role}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        {u.role === 'ADMIN' ? (
+                          <span className="text-gray-400 text-xs font-medium px-2">—</span>
+                        ) : (
+                          <button
+                            onClick={(e) => handleToggleVip(e, u)}
+                            disabled={togglingVipFor === u.id}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${u.vip ? 'bg-primary-500' : 'bg-gray-200 hover:bg-gray-300'
+                              } ${togglingVipFor === u.id ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                          >
+                            <span
+                              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${u.vip ? 'translate-x-6' : 'translate-x-1'
+                                }`}
+                            />
+                            {togglingVipFor === u.id && (
+                              <Loader2 className="absolute inset-0 m-auto h-3 w-3 text-white animate-spin opacity-50" />
+                            )}
+                          </button>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-gray-500">
+                        {formatDate(u.vipExpiresAt)}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+
+        {/* Pagination Controls */}
+        {!isLoading && totalPages > 1 && (
+          <div className="flex items-center justify-between mt-6 px-2">
+            <span className="text-sm text-gray-500 font-medium">
+              Showing page <span className="text-gray-900">{page + 1}</span> of <span className="text-gray-900">{totalPages}</span>
+            </span>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setPage(p => Math.max(0, p - 1))}
+                disabled={page === 0}
+                className="p-2 rounded-lg bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all border border-gray-200"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+
+              <div className="hidden sm:flex space-x-1">
+                {Array.from({ length: Math.min(5, totalPages) }).map((_, idx) => {
+                  let pageNum = page;
+                  if (page < 2) pageNum = idx;
+                  else if (page > totalPages - 3) pageNum = totalPages - 5 + idx;
+                  else pageNum = page - 2 + idx;
+
+                  if (pageNum < 0 || pageNum >= totalPages) return null;
+
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setPage(pageNum)}
+                      className={`w-10 h-10 rounded-lg text-sm font-semibold transition-all border ${page === pageNum
+                          ? 'bg-primary-500 text-white border-primary-500 shadow-sm'
+                          : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:text-gray-900'
+                        }`}
+                    >
+                      {pageNum + 1}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                disabled={page >= totalPages - 1}
+                className="p-2 rounded-lg bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all border border-gray-200"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        )}
+      </section>
     </div>
   )
 }
