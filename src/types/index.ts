@@ -52,3 +52,12 @@ export interface PageResponse<T> {
   first: boolean
   last: boolean
 }
+
+export interface AdminUserResponse {
+  id: string
+  username: string
+  email: string
+  role: 'USER' | 'ADMIN'
+  vip: boolean
+  vipExpiresAt?: string
+}

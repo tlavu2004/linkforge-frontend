@@ -1,38 +1,29 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'react-hot-toast'
 import { apiClient } from '../api/axios'
-import type { ShortLinkResponse, ApiResponse, UserLinkResponse, PageResponse } from '../types'
-import { LinkIcon, Copy, Check, ExternalLink, Loader2, AlertCircle, LayoutDashboard, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUpDown, MousePointerClick, Clock, Search, Calendar, X } from 'lucide-react'
-import { useAuthStore } from '../store/useAuthStore'
-import { Link } from 'react-router-dom'
+import type { ApiResponse, UserLinkResponse, PageResponse } from '../types'
+import { LinkIcon, Copy, Check, Loader2, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUpDown, MousePointerClick, Clock, Search, ArrowLeft } from 'lucide-react'
+import { useParams, useNavigate } from 'react-router-dom'
 
 type SortField = 'createdAt' | 'expiresAt' | 'originalUrl' | 'clickCount'
 type SortDirection = 'asc' | 'desc'
 
-export default function Dashboard() {
-  const [url, setUrl] = useState('')
-  const [expiresAt, setExpiresAt] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [recentLink, setRecentLink] = useState<ShortLinkResponse | null>(null)
-  const [copiedUrl, setCopiedUrl] = useState(false)
-  const [copiedLinkUrl, setCopiedLinkUrl] = useState<string | null>(null)
-  const { user } = useAuthStore()
-  const dateInputRef = useRef<HTMLInputElement>(null)
+export default function AdminUserLinks() {
+  const { userId } = useParams<{ userId: string }>()
+  const navigate = useNavigate()
 
-  // Link list state
   const [links, setLinks] = useState<UserLinkResponse[]>([])
   const [isLoadingLinks, setIsLoadingLinks] = useState(true)
   const [page, setPage] = useState(0)
   const [size, setSize] = useState(10)
   const [totalPages, setTotalPages] = useState(0)
-  const [totalElements, setTotalElements] = useState(0)
   const [sortBy, setSortBy] = useState<SortField>('createdAt')
   const [direction, setDirection] = useState<SortDirection>('desc')
   const [deletingCode, setDeletingCode] = useState<string | null>(null)
   const [keyword, setKeyword] = useState('')
   const [debouncedKeyword, setDebouncedKeyword] = useState('')
   const [jumpPage, setJumpPage] = useState('')
+  const [copiedLinkUrl, setCopiedLinkUrl] = useState<string | null>(null)
 
   // Debounce search keyword
   useEffect(() => {
@@ -44,11 +35,13 @@ export default function Dashboard() {
   }, [keyword])
 
   const fetchLinks = useCallback(async (isBackgroundUpdate = false) => {
+    if (!userId) return
+
     if (!isBackgroundUpdate) {
       setIsLoadingLinks(true)
     }
     try {
-      const { data } = await apiClient.get<ApiResponse<PageResponse<UserLinkResponse>>>('/me/links', {
+      const { data } = await apiClient.get<ApiResponse<PageResponse<UserLinkResponse>>>(`/admin/users/${userId}/links`, {
         params: {
           page,
           size,
@@ -60,7 +53,6 @@ export default function Dashboard() {
       if (data.success) {
         setLinks(data.data.content)
         setTotalPages(data.data.totalPages)
-        setTotalElements(data.data.totalElements)
       }
     } catch {
       // silently fail — will show empty state
@@ -69,72 +61,25 @@ export default function Dashboard() {
         setIsLoadingLinks(false)
       }
     }
-  }, [page, size, sortBy, direction, debouncedKeyword])
-
-  // Polling mechanism for real-time updates
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchLinks(true)
-    }, 10000) // 10 seconds
-    return () => clearInterval(interval)
-  }, [fetchLinks])
+  }, [userId, page, size, sortBy, direction, debouncedKeyword])
 
   useEffect(() => {
     fetchLinks()
   }, [fetchLinks])
 
-  const handleShorten = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!url) return
-
-    setIsLoading(true)
-    setError('')
-    setRecentLink(null)
-    setCopiedUrl(false)
-
-    try {
-      const payload: any = { originalUrl: url }
-      if (expiresAt) {
-        payload.expiresAt = new Date(expiresAt).toISOString()
-      }
-
-      const { data } = await apiClient.post<ApiResponse<ShortLinkResponse>>('/links', payload)
-      if (data.success) {
-        setRecentLink(data.data)
-        setUrl('')
-        toast.success('Link shortened successfully!')
-        // Refresh link list
-        fetchLinks()
-      } else {
-        setError(data.message || 'Failed to create short link.')
-        toast.error(data.message || 'Failed to create short link.')
-      }
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'An error occurred. Please try again later.')
-      toast.error(err.response?.data?.message || 'An error occurred.')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   const handleDeleteLink = async (shortCode: string) => {
+    if (!window.confirm(`Are you sure you want to delete the link "${shortCode}"?`)) return
+
     setDeletingCode(shortCode)
     try {
-      await apiClient.delete(`/me/links/${shortCode}`)
-      toast.success('Link deleted!')
+      await apiClient.delete(`/admin/users/${userId}/links/${shortCode}`)
+      toast.success('Link deleted successfully!')
       fetchLinks()
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to delete link.')
     } finally {
       setDeletingCode(null)
     }
-  }
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
-    setCopiedUrl(true)
-    toast.success('Copied to clipboard!')
-    setTimeout(() => setCopiedUrl(false), 2000)
   }
 
   const copyLinkToClipboard = (shortCode: string) => {
@@ -177,156 +122,26 @@ export default function Dashboard() {
   )
 
   return (
-    <div className="space-y-8">
-      {/* Create new link widget */}
-      <section className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary-50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 opacity-50 pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-50 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 opacity-50 pointer-events-none" />
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <button
+        onClick={() => navigate('/admin')}
+        className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back to Admin Dashboard
+      </button>
 
-        <div className="relative">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Create New Short Link</h2>
-
-          <form onSubmit={handleShorten} className="bg-white border border-gray-200 rounded-2xl md:rounded-[2rem] shadow-sm flex flex-col md:flex-row items-stretch p-2 focus-within:ring-2 focus-within:ring-primary-500 transition-all">
-            <div className="flex-1 w-full relative flex items-center">
-              <div className="absolute left-4 md:left-6 text-gray-400 pointer-events-none hidden md:block">
-                <LinkIcon className="w-6 h-6" />
-              </div>
-              <input
-                type="url"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="Paste your long URL here..."
-                className="w-full bg-transparent outline-none text-gray-900 placeholder:text-gray-400 font-medium text-base md:text-lg pl-4 md:pl-14 pr-4 py-3 md:py-4"
-                required
-                disabled={isLoading}
-              />
-            </div>
-
-            {(user?.vip || user?.role === 'ADMIN') && (
-              <div
-                className="w-full md:w-auto flex items-center border-t md:border-t-0 border-gray-100 md:border-l md:border-l-gray-200 group transition-colors hover:bg-gray-50/50 cursor-pointer select-none relative"
-                onClick={(e) => {
-                  const target = e.target as HTMLElement;
-                  if (target.closest('button')) return;
-                  try {
-                    dateInputRef.current?.showPicker();
-                  } catch (err) {
-                    dateInputRef.current?.focus();
-                  }
-                }}
-              >
-                <div className="flex items-center pl-4 md:pl-5 pr-3 md:pr-4 py-3 md:py-4 w-full justify-between gap-3 min-w-[210px] md:min-w-[250px]">
-                  <span className={`text-sm font-medium whitespace-nowrap ${expiresAt ? 'text-gray-900' : 'text-gray-400'}`}>
-                    {expiresAt
-                      ? new Date(expiresAt).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
-                      : 'dd/mm/yyyy hh:mm:ss'}
-                  </span>
-
-                  <div className="flex items-center gap-1 shrink-0">
-                    <div className="p-2 rounded-md hover:bg-gray-100 transition-colors text-gray-400">
-                      <Calendar className="w-4 h-4" />
-                    </div>
-                    <button
-                      type="button"
-                      disabled={!expiresAt}
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setExpiresAt(''); }}
-                      className={`p-2 rounded-md transition-colors ${expiresAt ? 'text-gray-400 hover:text-red-600 hover:bg-red-50' : 'text-gray-200 cursor-not-allowed opacity-50'}`}
-                      title={expiresAt ? "Clear expiration date" : ""}
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                <input
-                  ref={dateInputRef}
-                  type="datetime-local"
-                  step="1"
-                  value={expiresAt}
-                  onChange={(e) => setExpiresAt(e.target.value)}
-                  className="absolute bottom-0 right-8 w-px h-px opacity-0 pointer-events-none"
-                  style={{ colorScheme: 'light' }}
-                  tabIndex={-1}
-                />
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={isLoading || !url}
-              className="w-full md:w-auto bg-primary-600 hover:bg-primary-700 disabled:bg-primary-300 disabled:cursor-not-allowed text-white px-8 py-3 md:py-4 rounded-xl md:rounded-full font-semibold transition-all shadow-md hover:shadow-lg flex justify-center items-center h-full"
-            >
-              {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Shorten'}
-            </button>
-          </form>
-
-          {error && (
-            <div className="mt-4 bg-red-50 text-red-600 p-4 rounded-xl flex items-center text-sm font-medium animate-in fade-in">
-              <AlertCircle className="w-4 h-4 mr-2 shrink-0" />
-              <p>{error}</p>
-            </div>
-          )}
-
-          {!user?.vip && user?.role !== 'ADMIN' && (
-            <div className="mt-6 flex items-center rounded-xl bg-amber-50/80 border border-amber-100 p-4 text-sm text-amber-800">
-              <Star className="w-5 h-5 mr-3 text-amber-500 shrink-0" />
-              <p>Want to completely bypass advertisement pages for your visitors? <Link to="/vip-upgrade" className="font-semibold underline hover:text-amber-900 text-amber-700">Upgrade to VIP today!</Link></p>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Recent Link Result */}
-      {recentLink && (
-        <section className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 animate-in slide-in-from-bottom-4 duration-500">
-          <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-green-500 inline-block animate-pulse" /> Just Created
-          </h3>
-          <div className="flex flex-col md:flex-row gap-4 items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-200/60">
-            <div className="w-full md:w-auto overflow-hidden flex-1">
-              <div className="font-semibold text-lg text-gray-900 flex items-center gap-2 mb-1">
-                {window.location.origin}/r/{recentLink.shortCode}
-              </div>
-              <a href={recentLink.originalUrl} target="_blank" rel="noreferrer" className="text-sm text-gray-500 truncate block hover:text-primary-600 transition max-w-[300px] md:max-w-md">
-                {recentLink.originalUrl}
-              </a>
-            </div>
-
-            <div className="flex items-center gap-2 w-full md:w-auto mt-4 md:mt-0 pt-4 md:pt-0 border-t md:border-t-0 border-gray-200">
-              <button
-                onClick={() => copyToClipboard(window.location.origin + '/r/' + recentLink.shortCode)}
-                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 hover:border-primary-300 hover:bg-primary-50 text-gray-700 hover:text-primary-700 rounded-lg transition-colors text-sm font-medium"
-              >
-                {copiedUrl ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
-                Copy
-              </button>
-              <a
-                href={`/r/${recentLink.shortCode}`}
-                target="_blank"
-                rel="noreferrer"
-                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-100 text-gray-700 rounded-lg transition-colors text-sm font-medium"
-              >
-                <ExternalLink className="w-4 h-4" />
-                Visit
-              </a>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* My Links Section */}
       <section className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
             <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-              <LayoutDashboard className="w-5 h-5 text-primary-500" />
-              My Links
+              <LinkIcon className="w-5 h-5 text-primary-500" />
+              Manage User Links
             </h3>
-            <p className="text-sm text-gray-500 mt-1">{totalElements} link{totalElements !== 1 ? 's' : ''} total</p>
+            <p className="text-sm text-gray-500 mt-1">Viewing links for User ID: {userId}</p>
           </div>
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto flex-1 justify-end">
-            {/* Search Bar */}
             <div className="relative w-full sm:max-w-xs">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search className="h-4 w-4 text-gray-400" />
@@ -340,7 +155,6 @@ export default function Dashboard() {
               />
             </div>
 
-            {/* Sort Controls */}
             <div className="flex items-center gap-2 flex-wrap">
               <ArrowUpDown className="w-4 h-4 text-gray-400" />
               <SortButton field="createdAt" label="Created" />
@@ -358,8 +172,8 @@ export default function Dashboard() {
         ) : links.length === 0 ? (
           <div className="py-16 text-center">
             <LinkIcon className="w-12 h-12 text-gray-200 mx-auto mb-4" />
-            <h4 className="text-lg font-medium text-gray-500 mb-1">No links yet</h4>
-            <p className="text-sm text-gray-400">Create your first short link above!</p>
+            <h4 className="text-lg font-medium text-gray-500 mb-1">No links found</h4>
+            <p className="text-sm text-gray-400">This user hasn't created any links matching your criteria.</p>
           </div>
         ) : (
           <>
@@ -424,7 +238,6 @@ export default function Dashboard() {
               ))}
             </div>
 
-            {/* Pagination */}
             {totalPages > 0 && (
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-6 border-t border-gray-100">
                 <div className="flex items-center gap-4 text-sm text-gray-500 flex-wrap justify-center">
@@ -510,24 +323,5 @@ export default function Dashboard() {
         )}
       </section>
     </div>
-  )
-}
-
-function Star(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-    </svg>
   )
 }
