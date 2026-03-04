@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { toast } from 'react-hot-toast'
 import { apiClient } from '../api/axios'
 import type { ShortLinkResponse, ApiResponse, UserLinkResponse, PageResponse } from '../types'
-import { LinkIcon, Copy, Check, ExternalLink, Loader2, AlertCircle, LayoutDashboard, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUpDown, MousePointerClick, Clock, Search } from 'lucide-react'
+import { LinkIcon, Copy, Check, ExternalLink, Loader2, AlertCircle, LayoutDashboard, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUpDown, MousePointerClick, Clock, Search, Calendar, X } from 'lucide-react'
 import { useAuthStore } from '../store/useAuthStore'
 import { Link } from 'react-router-dom'
 
@@ -18,6 +18,7 @@ export default function Dashboard() {
   const [copiedUrl, setCopiedUrl] = useState(false)
   const [copiedLinkUrl, setCopiedLinkUrl] = useState<string | null>(null)
   const { user } = useAuthStore()
+  const dateInputRef = useRef<HTMLInputElement>(null)
 
   // Link list state
   const [links, setLinks] = useState<UserLinkResponse[]>([])
@@ -185,17 +186,17 @@ export default function Dashboard() {
         <div className="relative">
           <h2 className="text-xl font-bold text-gray-900 mb-6">Create New Short Link</h2>
 
-          <form onSubmit={handleShorten} className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <LinkIcon className="h-5 w-5 text-gray-400" />
+          <form onSubmit={handleShorten} className="bg-white border border-gray-200 rounded-2xl md:rounded-[2rem] shadow-sm flex flex-col md:flex-row items-stretch p-2 focus-within:ring-2 focus-within:ring-primary-500 transition-all">
+            <div className="flex-1 w-full relative flex items-center">
+              <div className="absolute left-4 md:left-6 text-gray-400 pointer-events-none hidden md:block">
+                <LinkIcon className="w-6 h-6" />
               </div>
               <input
                 type="url"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="Paste your long URL here..."
-                className="w-full bg-gray-50 outline-none text-gray-900 placeholder:text-gray-400 font-medium text-lg pl-12 pr-4 py-4 rounded-xl border border-gray-200 focus:bg-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                className="w-full bg-transparent outline-none text-gray-900 placeholder:text-gray-400 font-medium text-base md:text-lg pl-4 md:pl-14 pr-4 py-3 md:py-4"
                 required
                 disabled={isLoading}
               />
@@ -203,38 +204,57 @@ export default function Dashboard() {
 
             {(user?.vip || user?.role === 'ADMIN') && (
               <div
-                className="w-full md:w-auto mt-4 md:mt-0 relative bg-gray-50 rounded-xl border border-gray-200 hover:border-gray-300 transition-all"
-                style={{ minHeight: '56px' }}
+                className="w-full md:w-auto flex items-center border-t md:border-t-0 border-gray-100 md:border-l md:border-l-gray-200 group transition-colors hover:bg-gray-50/50 cursor-pointer select-none relative"
+                onClick={(e) => {
+                  const target = e.target as HTMLElement;
+                  if (target.closest('button')) return;
+                  try {
+                    dateInputRef.current?.showPicker();
+                  } catch (err) {
+                    dateInputRef.current?.focus();
+                  }
+                }}
               >
-                <span className={`absolute left-4 top-1/2 -translate-y-1/2 text-sm font-medium pointer-events-none whitespace-nowrap ${expiresAt ? 'text-gray-900' : 'text-gray-400'}`}>
-                  {expiresAt
-                    ? new Date(expiresAt).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
-                    : 'dd/mm/yyyy hh:mm:ss'}
-                </span>
+                <div className="flex items-center pl-4 md:pl-5 pr-3 md:pr-4 py-3 md:py-4 w-full justify-between gap-3 min-w-[210px] md:min-w-[250px]">
+                  <span className={`text-sm font-medium whitespace-nowrap ${expiresAt ? 'text-gray-900' : 'text-gray-400'}`}>
+                    {expiresAt
+                      ? new Date(expiresAt).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+                      : 'dd/mm/yyyy hh:mm:ss'}
+                  </span>
+
+                  <div className="flex items-center gap-1 shrink-0">
+                    <div className="p-2 rounded-md hover:bg-gray-100 transition-colors text-gray-400">
+                      <Calendar className="w-4 h-4" />
+                    </div>
+                    <button
+                      type="button"
+                      disabled={!expiresAt}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setExpiresAt(''); }}
+                      className={`p-2 rounded-md transition-colors ${expiresAt ? 'text-gray-400 hover:text-red-600 hover:bg-red-50' : 'text-gray-200 cursor-not-allowed opacity-50'}`}
+                      title={expiresAt ? "Clear expiration date" : ""}
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
                 <input
+                  ref={dateInputRef}
                   type="datetime-local"
                   step="1"
                   value={expiresAt}
                   onChange={(e) => setExpiresAt(e.target.value)}
-                  className="w-full bg-transparent outline-none cursor-pointer pl-4 pr-10 py-4 text-sm border-none focus:ring-0"
-                  style={{ color: 'transparent', caretColor: 'transparent', minWidth: '220px' }}
+                  className="absolute bottom-0 right-8 w-px h-px opacity-0 pointer-events-none"
+                  style={{ colorScheme: 'light' }}
+                  tabIndex={-1}
                 />
-                {expiresAt && (
-                  <button
-                    type="button"
-                    onClick={() => setExpiresAt('')}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-red-500 text-lg leading-none"
-                  >
-                    ×
-                  </button>
-                )}
               </div>
             )}
 
             <button
               type="submit"
               disabled={isLoading || !url}
-              className="md:w-32 bg-primary-600 hover:bg-primary-700 disabled:bg-primary-300 disabled:cursor-not-allowed text-white px-6 py-4 rounded-xl font-semibold transition-all shadow-sm flex justify-center items-center"
+              className="w-full md:w-auto bg-primary-600 hover:bg-primary-700 disabled:bg-primary-300 disabled:cursor-not-allowed text-white px-8 py-3 md:py-4 rounded-xl md:rounded-full font-semibold transition-all shadow-md hover:shadow-lg flex justify-center items-center h-full"
             >
               {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Shorten'}
             </button>

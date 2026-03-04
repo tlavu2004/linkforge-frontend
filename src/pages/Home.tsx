@@ -1,13 +1,15 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
 import { apiClient } from '../api/axios'
 import type { ShortLinkResponse, ApiResponse } from '../types'
-import { Copy, Check, Link as LinkIcon, AlertCircle, LayoutDashboard } from 'lucide-react'
+import { Copy, Check, Link as LinkIcon, AlertCircle, LayoutDashboard, Calendar, X } from 'lucide-react'
 import { useAuthStore } from '../store/useAuthStore'
 
 export default function Home() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+
+  const dateInputRef = useRef<HTMLInputElement>(null)
 
   const [url, setUrl] = useState('')
   const [expiresAt, setExpiresAt] = useState('')
@@ -105,32 +107,52 @@ export default function Home() {
                 />
               </div>
 
-              {isAuthenticated && (useAuthStore.getState().user?.vip || useAuthStore.getState().user?.role === 'ADMIN') && (
-                <div className="w-full md:w-auto px-2 md:px-0 py-2 md:py-0 border-t md:border-t-0 border-gray-100 flex items-center justify-center md:border-l md:border-l-gray-200 relative">
-                  <span className={`absolute left-5 md:left-3 top-1/2 -translate-y-1/2 text-sm font-medium pointer-events-none whitespace-nowrap ${expiresAt ? 'text-gray-900' : 'text-gray-400'}`}>
+              <div
+                className="w-full md:w-auto flex items-center border-t md:border-t-0 border-gray-100 md:border-l md:border-l-gray-200 group transition-colors hover:bg-gray-50/50 cursor-pointer select-none relative"
+                onClick={(e) => {
+                  const target = e.target as HTMLElement;
+                  if (target.closest('button')) return;
+                  try {
+                    dateInputRef.current?.showPicker();
+                  } catch (err) {
+                    dateInputRef.current?.focus();
+                  }
+                }}
+              >
+                <div className="flex items-center pl-4 md:pl-5 pr-3 md:pr-4 py-3 md:py-4 w-full justify-between gap-3 min-w-[210px] md:min-w-[250px]">
+                  <span className={`text-sm font-medium whitespace-nowrap ${expiresAt ? 'text-gray-900' : 'text-gray-400'}`}>
                     {expiresAt
                       ? new Date(expiresAt).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
                       : 'dd/mm/yyyy hh:mm:ss'}
                   </span>
-                  <input
-                    type="datetime-local"
-                    step="1"
-                    value={expiresAt}
-                    onChange={(e) => setExpiresAt(e.target.value)}
-                    className="w-full bg-transparent outline-none cursor-pointer pl-4 pr-8 py-3 text-sm border-none focus:ring-0"
-                    style={{ color: 'transparent', caretColor: 'transparent', minWidth: '210px' }}
-                  />
-                  {expiresAt && (
+
+                  <div className="flex items-center gap-1 shrink-0">
+                    <div className="p-2 rounded-md hover:bg-gray-100 transition-colors text-gray-400">
+                      <Calendar className="w-4 h-4" />
+                    </div>
                     <button
                       type="button"
-                      onClick={() => setExpiresAt('')}
-                      className="absolute right-1 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-red-500 text-lg leading-none"
+                      disabled={!expiresAt}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setExpiresAt(''); }}
+                      className={`p-2 rounded-md transition-colors ${expiresAt ? 'text-gray-400 hover:text-red-600 hover:bg-red-50' : 'text-gray-200 cursor-not-allowed opacity-50'}`}
+                      title={expiresAt ? "Clear expiration date" : ""}
                     >
-                      ×
+                      <X className="w-4 h-4" />
                     </button>
-                  )}
+                  </div>
                 </div>
-              )}
+
+                <input
+                  ref={dateInputRef}
+                  type="datetime-local"
+                  step="1"
+                  value={expiresAt}
+                  onChange={(e) => setExpiresAt(e.target.value)}
+                  className="absolute bottom-0 right-8 w-px h-px opacity-0 pointer-events-none"
+                  style={{ colorScheme: 'light' }}
+                  tabIndex={-1}
+                />
+              </div>
 
               <button
                 type="submit"
