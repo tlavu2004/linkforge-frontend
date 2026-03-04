@@ -75,7 +75,10 @@ export default function AdminDashboard() {
       })
 
       if (data.success) {
-        setUsers(users.map(u => u.id === targetUser.id ? { ...u, vip: newVipStatus } : u))
+        setUsers(users.map(u => u.id === targetUser.id
+          ? { ...u, vip: newVipStatus, vipExpiresAt: newVipStatus ? u.vipExpiresAt : undefined }
+          : u
+        ))
       } else {
         setError(data.message || 'Failed to toggle VIP status.')
       }
@@ -178,8 +181,8 @@ export default function AdminDashboard() {
                       <td className="px-6 py-4 text-gray-500 group-hover:text-primary-600 transition-colors">{u.email}</td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold leading-none ${u.role === 'ADMIN'
-                            ? 'bg-red-50 text-red-600 border border-red-100'
-                            : 'bg-indigo-50 text-indigo-600 border border-indigo-100'
+                          ? 'bg-red-50 text-red-600 border border-red-100'
+                          : 'bg-indigo-50 text-indigo-600 border border-indigo-100'
                           }`}>
                           {u.role}
                         </span>
@@ -244,8 +247,8 @@ export default function AdminDashboard() {
                       key={pageNum}
                       onClick={() => setPage(pageNum)}
                       className={`w-10 h-10 rounded-lg text-sm font-semibold transition-all border ${page === pageNum
-                          ? 'bg-primary-500 text-white border-primary-500 shadow-sm'
-                          : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:text-gray-900'
+                        ? 'bg-primary-500 text-white border-primary-500 shadow-sm'
+                        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:text-gray-900'
                         }`}
                     >
                       {pageNum + 1}

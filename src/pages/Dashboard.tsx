@@ -11,6 +11,7 @@ type SortDirection = 'asc' | 'desc'
 
 export default function Dashboard() {
   const [url, setUrl] = useState('')
+  const [expiresAt, setExpiresAt] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [recentLink, setRecentLink] = useState<ShortLinkResponse | null>(null)
@@ -91,9 +92,12 @@ export default function Dashboard() {
     setCopiedUrl(false)
 
     try {
-      const { data } = await apiClient.post<ApiResponse<ShortLinkResponse>>('/links', {
-        originalUrl: url
-      })
+      const payload: any = { originalUrl: url }
+      if (expiresAt) {
+        payload.expiresAt = new Date(expiresAt).toISOString()
+      }
+
+      const { data } = await apiClient.post<ApiResponse<ShortLinkResponse>>('/links', payload)
       if (data.success) {
         setRecentLink(data.data)
         setUrl('')
@@ -196,6 +200,37 @@ export default function Dashboard() {
                 disabled={isLoading}
               />
             </div>
+
+            {(user?.vip || user?.role === 'ADMIN') && (
+              <div
+                className="w-full md:w-auto mt-4 md:mt-0 relative bg-gray-50 rounded-xl border border-gray-200 hover:border-gray-300 transition-all"
+                style={{ minHeight: '56px' }}
+              >
+                <span className={`absolute left-4 top-1/2 -translate-y-1/2 text-sm font-medium pointer-events-none whitespace-nowrap ${expiresAt ? 'text-gray-900' : 'text-gray-400'}`}>
+                  {expiresAt
+                    ? new Date(expiresAt).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+                    : 'dd/mm/yyyy hh:mm:ss'}
+                </span>
+                <input
+                  type="datetime-local"
+                  step="1"
+                  value={expiresAt}
+                  onChange={(e) => setExpiresAt(e.target.value)}
+                  className="w-full bg-transparent outline-none cursor-pointer pl-4 pr-10 py-4 text-sm border-none focus:ring-0"
+                  style={{ color: 'transparent', caretColor: 'transparent', minWidth: '220px' }}
+                />
+                {expiresAt && (
+                  <button
+                    type="button"
+                    onClick={() => setExpiresAt('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-red-500 text-lg leading-none"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={isLoading || !url}
