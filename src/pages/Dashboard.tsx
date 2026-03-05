@@ -36,6 +36,8 @@ export default function Dashboard() {
   const [selectedLinkForQr, setSelectedLinkForQr] = useState<UserLinkResponse | null>(null)
   const [isGeneratingQr, setIsGeneratingQr] = useState(false)
   const [isDeletingQr, setIsDeletingQr] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [qrCodeToRemove, setQrCodeToRemove] = useState<string | null>(null)
 
   // Debounce search keyword
   useEffect(() => {
@@ -156,8 +158,14 @@ export default function Dashboard() {
     }
   }
 
-  const handleDeleteQr = async (shortCode: string) => {
-    if (!confirm('Are you sure you want to delete this QR code?')) return
+  const triggerDeleteQrConfirm = (shortCode: string) => {
+    setQrCodeToRemove(shortCode)
+    setShowDeleteConfirm(true)
+  }
+
+  const handleDeleteQr = async () => {
+    if (!qrCodeToRemove) return
+    const shortCode = qrCodeToRemove
     setIsDeletingQr(true)
     try {
       const { data } = await apiClient.delete<ApiResponse<ShortLinkResponse>>(`/me/links/${shortCode}/qr-code`)
@@ -171,6 +179,8 @@ export default function Dashboard() {
         if (recentLink?.shortCode === shortCode) {
           setRecentLink({ ...recentLink, qrCode: undefined } as any)
         }
+        setShowDeleteConfirm(false)
+        setQrCodeToRemove(null)
       }
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to delete QR code.')
@@ -226,359 +236,362 @@ export default function Dashboard() {
   )
 
   return (
-    <div className="space-y-8">
-      {/* Create new link widget */}
-      <section className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary-50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 opacity-50 pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-50 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 opacity-50 pointer-events-none" />
+    <div className="pb-8">
+      <div className="space-y-8">
+        {/* Create new link widget */}
+        <section className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary-50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 opacity-50 pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-50 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 opacity-50 pointer-events-none" />
 
-        <div className="relative">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Create New Short Link</h2>
+          <div className="relative">
+            <h2 className="text-xl font-bold text-gray-900 mb-6">Create New Short Link</h2>
 
-          <form onSubmit={handleShorten} className="bg-white border border-gray-200 rounded-2xl md:rounded-[2rem] shadow-sm flex flex-col md:flex-row items-stretch p-2 focus-within:ring-2 focus-within:ring-primary-500 transition-all">
-            <div className="flex-1 w-full relative flex items-center">
-              <div className="absolute left-4 md:left-6 text-gray-400 pointer-events-none hidden md:block">
-                <LinkIcon className="w-6 h-6" />
+            <form onSubmit={handleShorten} className="bg-white border border-gray-200 rounded-2xl md:rounded-[2rem] shadow-sm flex flex-col md:flex-row items-stretch p-2 focus-within:ring-2 focus-within:ring-primary-500 transition-all">
+              <div className="flex-1 w-full relative flex items-center">
+                <div className="absolute left-4 md:left-6 text-gray-400 pointer-events-none hidden md:block">
+                  <LinkIcon className="w-6 h-6" />
+                </div>
+                <input
+                  type="url"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder="Paste your long URL here..."
+                  className="w-full bg-transparent outline-none text-gray-900 placeholder:text-gray-400 font-medium text-base md:text-lg pl-4 md:pl-14 pr-4 py-3 md:py-4"
+                  required
+                  disabled={isLoading}
+                />
               </div>
-              <input
-                type="url"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="Paste your long URL here..."
-                className="w-full bg-transparent outline-none text-gray-900 placeholder:text-gray-400 font-medium text-base md:text-lg pl-4 md:pl-14 pr-4 py-3 md:py-4"
-                required
-                disabled={isLoading}
-              />
+
+              {(user?.vip || user?.role === 'ADMIN') && (
+                <div
+                  className="w-full md:w-auto flex items-center border-t md:border-t-0 border-gray-100 md:border-l md:border-l-gray-200 group transition-colors hover:bg-gray-50/50 cursor-pointer select-none relative"
+                  onClick={(e) => {
+                    const target = e.target as HTMLElement;
+                    if (target.closest('button')) return;
+                    try {
+                      dateInputRef.current?.showPicker();
+                    } catch (err) {
+                      dateInputRef.current?.focus();
+                    }
+                  }}
+                >
+                  <div className="flex items-center pl-4 md:pl-5 pr-3 md:pr-4 py-3 md:py-4 w-full justify-between gap-3 min-w-[210px] md:min-w-[250px]">
+                    <span className={`text-sm font-medium whitespace-nowrap ${expiresAt ? 'text-gray-900' : 'text-gray-400'}`}>
+                      {expiresAt
+                        ? new Date(expiresAt).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+                        : 'dd/mm/yyyy hh:mm:ss'}
+                    </span>
+
+                    <div className="flex items-center gap-1 shrink-0">
+                      <div className="p-2 rounded-md hover:bg-gray-100 transition-colors text-gray-400">
+                        <Calendar className="w-4 h-4" />
+                      </div>
+                      <button
+                        type="button"
+                        disabled={!expiresAt}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setExpiresAt(''); }}
+                        className={`p-2 rounded-md transition-colors ${expiresAt ? 'text-gray-400 hover:text-red-600 hover:bg-red-50' : 'text-gray-200 cursor-not-allowed opacity-50'}`}
+                        title={expiresAt ? "Clear expiration date" : ""}
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <input
+                    ref={dateInputRef}
+                    type="datetime-local"
+                    step="1"
+                    value={expiresAt}
+                    onChange={(e) => setExpiresAt(e.target.value)}
+                    className="absolute bottom-0 right-8 w-px h-px opacity-0 pointer-events-none"
+                    style={{ colorScheme: 'light' }}
+                    tabIndex={-1}
+                  />
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={isLoading || !url}
+                className="w-full md:w-auto bg-primary-600 hover:bg-primary-700 disabled:bg-primary-300 disabled:cursor-not-allowed text-white px-8 py-3 md:py-4 rounded-xl md:rounded-full font-semibold transition-all shadow-md hover:shadow-lg flex justify-center items-center h-full"
+              >
+                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Shorten'}
+              </button>
+            </form>
+
+            {error && (
+              <div className="mt-4 bg-red-50 text-red-600 p-4 rounded-xl flex items-center text-sm font-medium animate-in fade-in">
+                <AlertCircle className="w-4 h-4 mr-2 shrink-0" />
+                <p>{error}</p>
+              </div>
+            )}
+
+            {!user?.vip && user?.role !== 'ADMIN' && (
+              <div className="mt-6 flex items-center rounded-xl bg-amber-50/80 border border-amber-100 p-4 text-sm text-amber-800">
+                <Star className="w-5 h-5 mr-3 text-amber-500 shrink-0" />
+                <p>Want to completely bypass advertisement pages for your visitors? <Link to="/vip-upgrade" className="font-semibold underline hover:text-amber-900 text-amber-700">Upgrade to VIP today!</Link></p>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Recent Link Result */}
+        {recentLink && (
+          <section className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 animate-in slide-in-from-bottom-4 duration-500">
+            <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-green-500 inline-block animate-pulse" /> Just Created
+            </h3>
+            <div className="flex flex-col md:flex-row gap-4 items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-200/60">
+              <div className="w-full md:w-auto overflow-hidden flex-1">
+                <div className="font-semibold text-lg text-gray-900 flex items-center gap-2 mb-1">
+                  {window.location.origin}/r/{recentLink.shortCode}
+                </div>
+                <a href={recentLink.originalUrl} target="_blank" rel="noreferrer" className="text-sm text-gray-500 truncate block hover:text-primary-600 transition max-w-[300px] md:max-w-md">
+                  {recentLink.originalUrl}
+                </a>
+              </div>
+
+              <div className="flex items-center gap-2 w-full md:w-auto mt-4 md:mt-0 pt-4 md:pt-0 border-t md:border-t-0 border-gray-200">
+                <button
+                  onClick={() => copyToClipboard(window.location.origin + '/r/' + recentLink.shortCode)}
+                  className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 hover:border-primary-300 hover:bg-primary-50 text-gray-700 hover:text-primary-700 rounded-lg transition-colors text-sm font-medium"
+                >
+                  {copiedUrl ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                  Copy
+                </button>
+                <a
+                  href={`/r/${recentLink.shortCode}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-100 text-gray-700 rounded-lg transition-colors text-sm font-medium"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  Visit
+                </a>
+                <button
+                  onClick={() => setSelectedLinkForQr(recentLink as any)}
+                  className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 hover:border-primary-300 hover:bg-primary-50 text-gray-700 hover:text-primary-700 rounded-lg transition-colors text-sm font-medium"
+                >
+                  <QrCode className="w-4 h-4" />
+                  QR Code
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* My Links Section */}
+        <section className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <LayoutDashboard className="w-5 h-5 text-primary-500" />
+                My Links
+              </h3>
+              <p className="text-sm text-gray-500 mt-1">{totalElements} link{totalElements !== 1 ? 's' : ''} total</p>
             </div>
 
-            {(user?.vip || user?.role === 'ADMIN') && (
-              <div
-                className="w-full md:w-auto flex items-center border-t md:border-t-0 border-gray-100 md:border-l md:border-l-gray-200 group transition-colors hover:bg-gray-50/50 cursor-pointer select-none relative"
-                onClick={(e) => {
-                  const target = e.target as HTMLElement;
-                  if (target.closest('button')) return;
-                  try {
-                    dateInputRef.current?.showPicker();
-                  } catch (err) {
-                    dateInputRef.current?.focus();
-                  }
-                }}
-              >
-                <div className="flex items-center pl-4 md:pl-5 pr-3 md:pr-4 py-3 md:py-4 w-full justify-between gap-3 min-w-[210px] md:min-w-[250px]">
-                  <span className={`text-sm font-medium whitespace-nowrap ${expiresAt ? 'text-gray-900' : 'text-gray-400'}`}>
-                    {expiresAt
-                      ? new Date(expiresAt).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
-                      : 'dd/mm/yyyy hh:mm:ss'}
-                  </span>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto flex-1 justify-end">
+              {/* Search Bar */}
+              <div className="relative w-full sm:max-w-xs">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-4 w-4 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search links..."
+                  value={keyword}
+                  onChange={(e) => setKeyword(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white transition-all"
+                />
+              </div>
 
-                  <div className="flex items-center gap-1 shrink-0">
-                    <div className="p-2 rounded-md hover:bg-gray-100 transition-colors text-gray-400">
-                      <Calendar className="w-4 h-4" />
+              {/* Sort Controls */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <ArrowUpDown className="w-4 h-4 text-gray-400" />
+                <SortButton field="createdAt" label="Created" />
+                <SortButton field="expiresAt" label="Expires" />
+                <SortButton field="originalUrl" label="URL" />
+                <SortButton field="clickCount" label="Clicks" />
+              </div>
+            </div>
+          </div>
+
+          {isLoadingLinks ? (
+            <div className="flex justify-center py-16">
+              <Loader2 className="w-8 h-8 animate-spin text-primary-400" />
+            </div>
+          ) : links.length === 0 ? (
+            <div className="py-16 text-center">
+              <LinkIcon className="w-12 h-12 text-gray-200 mx-auto mb-4" />
+              <h4 className="text-lg font-medium text-gray-500 mb-1">No links yet</h4>
+              <p className="text-sm text-gray-400">Create your first short link above!</p>
+            </div>
+          ) : (
+            <>
+              <div className="space-y-3">
+                {links.map((link) => (
+                  <div
+                    key={link.shortCode}
+                    className="group flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl border border-gray-100 hover:border-primary-200 hover:bg-primary-50/30 transition-all"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-semibold text-gray-900 text-sm bg-gray-100 px-2 py-1 rounded-md">
+                          {link.shortCode}
+                        </span>
+                        <button
+                          onClick={() => copyLinkToClipboard(link.shortCode)}
+                          className="p-1.5 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-md transition-colors"
+                          title="Copy short link"
+                        >
+                          {copiedLinkUrl === link.shortCode ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
+                        </button>
+                        {link.expired && (
+                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-red-100 text-red-600">Expired</span>
+                        )}
+                      </div>
+                      <a
+                        href={link.originalUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-sm text-gray-500 truncate block hover:text-primary-600 transition max-w-xs sm:max-w-md lg:max-w-lg"
+                      >
+                        {link.originalUrl}
+                      </a>
+                    </div>
+
+                    <div className="flex items-center gap-4 text-xs text-gray-400 shrink-0">
+                      <div className="flex items-center gap-1" title="Clicks">
+                        <MousePointerClick className="w-3.5 h-3.5" />
+                        <span className="font-medium text-gray-600">{link.clickCount}</span>
+                      </div>
+                      <div className="flex items-center gap-1" title="Created">
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>{formatDate(link.createdAt)}</span>
+                      </div>
+                      <div className="hidden sm:flex items-center gap-1 border-l border-gray-200 pl-4 ml-2" title="Expires">
+                        <Clock className="w-3.5 h-3.5 text-amber-500" />
+                        <span>{link.expiresAt ? formatDate(link.expiresAt) : 'Never'}</span>
+                      </div>
+                      <div className="flex items-center gap-1 border-l border-gray-200 pl-4 ml-2">
+                        <button
+                          onClick={() => setSelectedLinkForQr(link)}
+                          className={`p-2 rounded-lg transition-colors ${link.qrCode ? 'text-primary-600 bg-primary-50 hover:bg-primary-100' : 'text-gray-400 hover:text-primary-600 hover:bg-primary-50'}`}
+                          title={link.qrCode ? "View QR Code" : "Generate QR Code"}
+                        >
+                          <QrCode className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteLink(link.shortCode)}
+                          disabled={deletingCode === link.shortCode}
+                          className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+                          title="Delete link"
+                        >
+                          {deletingCode === link.shortCode
+                            ? <Loader2 className="w-4 h-4 animate-spin" />
+                            : <Trash2 className="w-4 h-4" />
+                          }
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 0 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-6 border-t border-gray-100">
+                  <div className="flex items-center gap-4 text-sm text-gray-500 flex-wrap justify-center">
+                    <span>Page {page + 1} of {totalPages}</span>
+                    <div className="flex items-center gap-2 border-l border-gray-200 pl-4">
+                      <span>Show:</span>
+                      <select
+                        value={size}
+                        onChange={(e) => {
+                          setSize(Number(e.target.value))
+                          setPage(0)
+                        }}
+                        className="bg-gray-50 border border-gray-200 text-gray-700 rounded-lg focus:ring-primary-500 focus:border-primary-500 block py-1.5 px-2 outline-none cursor-pointer"
+                      >
+                        <option value={10}>10</option>
+                        <option value={25}>25</option>
+                        <option value={50}>50</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-center">
+                    <div className="flex items-center mx-1 sm:mx-2 text-sm text-gray-500">
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          const p = parseInt(jumpPage, 10);
+                          if (!isNaN(p)) {
+                            setPage(Math.max(0, Math.min(totalPages - 1, p - 1)));
+                          }
+                          setJumpPage("");
+                        }}
+                        className="flex items-center"
+                      >
+                        <input
+                          type="number"
+                          min="1"
+                          max={totalPages}
+                          value={jumpPage}
+                          onChange={(e) => setJumpPage(e.target.value)}
+                          placeholder="..."
+                          className="w-12 px-1 py-1 text-center text-sm border border-gray-200 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 hide-arrows"
+                        />
+                      </form>
+                      <span className="ml-1.5">/ {totalPages}</span>
                     </div>
                     <button
-                      type="button"
-                      disabled={!expiresAt}
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setExpiresAt(''); }}
-                      className={`p-2 rounded-md transition-colors ${expiresAt ? 'text-gray-400 hover:text-red-600 hover:bg-red-50' : 'text-gray-200 cursor-not-allowed opacity-50'}`}
-                      title={expiresAt ? "Clear expiration date" : ""}
+                      onClick={() => setPage(0)}
+                      disabled={page === 0}
+                      className="p-1.5 sm:p-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-gray-600"
+                      title="First Page"
                     >
-                      <X className="w-4 h-4" />
+                      <ChevronsLeft className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setPage(p => Math.max(0, p - 1))}
+                      disabled={page === 0}
+                      className="p-1.5 sm:p-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-gray-600"
+                      title="Previous Page"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                      disabled={page >= totalPages - 1}
+                      className="p-1.5 sm:p-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-gray-600"
+                      title="Next Page"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setPage(totalPages - 1)}
+                      disabled={page >= totalPages - 1}
+                      className="p-1.5 sm:p-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-gray-600"
+                      title="Last Page"
+                    >
+                      <ChevronsRight className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
-
-                <input
-                  ref={dateInputRef}
-                  type="datetime-local"
-                  step="1"
-                  value={expiresAt}
-                  onChange={(e) => setExpiresAt(e.target.value)}
-                  className="absolute bottom-0 right-8 w-px h-px opacity-0 pointer-events-none"
-                  style={{ colorScheme: 'light' }}
-                  tabIndex={-1}
-                />
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={isLoading || !url}
-              className="w-full md:w-auto bg-primary-600 hover:bg-primary-700 disabled:bg-primary-300 disabled:cursor-not-allowed text-white px-8 py-3 md:py-4 rounded-xl md:rounded-full font-semibold transition-all shadow-md hover:shadow-lg flex justify-center items-center h-full"
-            >
-              {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Shorten'}
-            </button>
-          </form>
-
-          {error && (
-            <div className="mt-4 bg-red-50 text-red-600 p-4 rounded-xl flex items-center text-sm font-medium animate-in fade-in">
-              <AlertCircle className="w-4 h-4 mr-2 shrink-0" />
-              <p>{error}</p>
-            </div>
+              )}
+            </>
           )}
-
-          {!user?.vip && user?.role !== 'ADMIN' && (
-            <div className="mt-6 flex items-center rounded-xl bg-amber-50/80 border border-amber-100 p-4 text-sm text-amber-800">
-              <Star className="w-5 h-5 mr-3 text-amber-500 shrink-0" />
-              <p>Want to completely bypass advertisement pages for your visitors? <Link to="/vip-upgrade" className="font-semibold underline hover:text-amber-900 text-amber-700">Upgrade to VIP today!</Link></p>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Recent Link Result */}
-      {recentLink && (
-        <section className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 animate-in slide-in-from-bottom-4 duration-500">
-          <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-green-500 inline-block animate-pulse" /> Just Created
-          </h3>
-          <div className="flex flex-col md:flex-row gap-4 items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-200/60">
-            <div className="w-full md:w-auto overflow-hidden flex-1">
-              <div className="font-semibold text-lg text-gray-900 flex items-center gap-2 mb-1">
-                {window.location.origin}/r/{recentLink.shortCode}
-              </div>
-              <a href={recentLink.originalUrl} target="_blank" rel="noreferrer" className="text-sm text-gray-500 truncate block hover:text-primary-600 transition max-w-[300px] md:max-w-md">
-                {recentLink.originalUrl}
-              </a>
-            </div>
-
-            <div className="flex items-center gap-2 w-full md:w-auto mt-4 md:mt-0 pt-4 md:pt-0 border-t md:border-t-0 border-gray-200">
-              <button
-                onClick={() => copyToClipboard(window.location.origin + '/r/' + recentLink.shortCode)}
-                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 hover:border-primary-300 hover:bg-primary-50 text-gray-700 hover:text-primary-700 rounded-lg transition-colors text-sm font-medium"
-              >
-                {copiedUrl ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
-                Copy
-              </button>
-              <a
-                href={`/r/${recentLink.shortCode}`}
-                target="_blank"
-                rel="noreferrer"
-                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-100 text-gray-700 rounded-lg transition-colors text-sm font-medium"
-              >
-                <ExternalLink className="w-4 h-4" />
-                Visit
-              </a>
-              <button
-                onClick={() => setSelectedLinkForQr(recentLink as any)}
-                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 hover:border-primary-300 hover:bg-primary-50 text-gray-700 hover:text-primary-700 rounded-lg transition-colors text-sm font-medium"
-              >
-                <QrCode className="w-4 h-4" />
-                QR Code
-              </button>
-            </div>
-          </div>
         </section>
-      )}
 
-      {/* My Links Section */}
-      <section className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div>
-            <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-              <LayoutDashboard className="w-5 h-5 text-primary-500" />
-              My Links
-            </h3>
-            <p className="text-sm text-gray-500 mt-1">{totalElements} link{totalElements !== 1 ? 's' : ''} total</p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto flex-1 justify-end">
-            {/* Search Bar */}
-            <div className="relative w-full sm:max-w-xs">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 text-gray-400" />
-              </div>
-              <input
-                type="text"
-                placeholder="Search links..."
-                value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white transition-all"
-              />
-            </div>
-
-            {/* Sort Controls */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <ArrowUpDown className="w-4 h-4 text-gray-400" />
-              <SortButton field="createdAt" label="Created" />
-              <SortButton field="expiresAt" label="Expires" />
-              <SortButton field="originalUrl" label="URL" />
-              <SortButton field="clickCount" label="Clicks" />
-            </div>
-          </div>
-        </div>
-
-        {isLoadingLinks ? (
-          <div className="flex justify-center py-16">
-            <Loader2 className="w-8 h-8 animate-spin text-primary-400" />
-          </div>
-        ) : links.length === 0 ? (
-          <div className="py-16 text-center">
-            <LinkIcon className="w-12 h-12 text-gray-200 mx-auto mb-4" />
-            <h4 className="text-lg font-medium text-gray-500 mb-1">No links yet</h4>
-            <p className="text-sm text-gray-400">Create your first short link above!</p>
-          </div>
-        ) : (
-          <>
-            <div className="space-y-3">
-              {links.map((link) => (
-                <div
-                  key={link.shortCode}
-                  className="group flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl border border-gray-100 hover:border-primary-200 hover:bg-primary-50/30 transition-all"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold text-gray-900 text-sm bg-gray-100 px-2 py-1 rounded-md">
-                        {link.shortCode}
-                      </span>
-                      <button
-                        onClick={() => copyLinkToClipboard(link.shortCode)}
-                        className="p-1.5 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-md transition-colors"
-                        title="Copy short link"
-                      >
-                        {copiedLinkUrl === link.shortCode ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
-                      </button>
-                      {link.expired && (
-                        <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-red-100 text-red-600">Expired</span>
-                      )}
-                    </div>
-                    <a
-                      href={link.originalUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-sm text-gray-500 truncate block hover:text-primary-600 transition max-w-xs sm:max-w-md lg:max-w-lg"
-                    >
-                      {link.originalUrl}
-                    </a>
-                  </div>
-
-                  <div className="flex items-center gap-4 text-xs text-gray-400 shrink-0">
-                    <div className="flex items-center gap-1" title="Clicks">
-                      <MousePointerClick className="w-3.5 h-3.5" />
-                      <span className="font-medium text-gray-600">{link.clickCount}</span>
-                    </div>
-                    <div className="flex items-center gap-1" title="Created">
-                      <Clock className="w-3.5 h-3.5" />
-                      <span>{formatDate(link.createdAt)}</span>
-                    </div>
-                    <div className="hidden sm:flex items-center gap-1 border-l border-gray-200 pl-4 ml-2" title="Expires">
-                      <Clock className="w-3.5 h-3.5 text-amber-500" />
-                      <span>{link.expiresAt ? formatDate(link.expiresAt) : 'Never'}</span>
-                    </div>
-                    <div className="flex items-center gap-1 border-l border-gray-200 pl-4 ml-2">
-                      <button
-                        onClick={() => setSelectedLinkForQr(link)}
-                        className={`p-2 rounded-lg transition-colors ${link.qrCode ? 'text-primary-600 bg-primary-50 hover:bg-primary-100' : 'text-gray-400 hover:text-primary-600 hover:bg-primary-50'}`}
-                        title={link.qrCode ? "View QR Code" : "Generate QR Code"}
-                      >
-                        <QrCode className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteLink(link.shortCode)}
-                        disabled={deletingCode === link.shortCode}
-                        className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
-                        title="Delete link"
-                      >
-                        {deletingCode === link.shortCode
-                          ? <Loader2 className="w-4 h-4 animate-spin" />
-                          : <Trash2 className="w-4 h-4" />
-                        }
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 0 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-6 border-t border-gray-100">
-                <div className="flex items-center gap-4 text-sm text-gray-500 flex-wrap justify-center">
-                  <span>Page {page + 1} of {totalPages}</span>
-                  <div className="flex items-center gap-2 border-l border-gray-200 pl-4">
-                    <span>Show:</span>
-                    <select
-                      value={size}
-                      onChange={(e) => {
-                        setSize(Number(e.target.value))
-                        setPage(0)
-                      }}
-                      className="bg-gray-50 border border-gray-200 text-gray-700 rounded-lg focus:ring-primary-500 focus:border-primary-500 block py-1.5 px-2 outline-none cursor-pointer"
-                    >
-                      <option value={10}>10</option>
-                      <option value={25}>25</option>
-                      <option value={50}>50</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-center">
-                  <div className="flex items-center mx-1 sm:mx-2 text-sm text-gray-500">
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        const p = parseInt(jumpPage, 10);
-                        if (!isNaN(p)) {
-                          setPage(Math.max(0, Math.min(totalPages - 1, p - 1)));
-                        }
-                        setJumpPage("");
-                      }}
-                      className="flex items-center"
-                    >
-                      <input
-                        type="number"
-                        min="1"
-                        max={totalPages}
-                        value={jumpPage}
-                        onChange={(e) => setJumpPage(e.target.value)}
-                        placeholder="..."
-                        className="w-12 px-1 py-1 text-center text-sm border border-gray-200 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 hide-arrows"
-                      />
-                    </form>
-                    <span className="ml-1.5">/ {totalPages}</span>
-                  </div>
-                  <button
-                    onClick={() => setPage(0)}
-                    disabled={page === 0}
-                    className="p-1.5 sm:p-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-gray-600"
-                    title="First Page"
-                  >
-                    <ChevronsLeft className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setPage(p => Math.max(0, p - 1))}
-                    disabled={page === 0}
-                    className="p-1.5 sm:p-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-gray-600"
-                    title="Previous Page"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
-                    disabled={page >= totalPages - 1}
-                    className="p-1.5 sm:p-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-gray-600"
-                    title="Next Page"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setPage(totalPages - 1)}
-                    disabled={page >= totalPages - 1}
-                    className="p-1.5 sm:p-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-gray-600"
-                    title="Last Page"
-                  >
-                    <ChevronsRight className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-      </section>
+      </div>
 
       {/* QR Code Modal */}
       {selectedLinkForQr && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden">
             <div className="p-6 border-b border-gray-100 flex items-center justify-between">
               <h3 className="text-lg font-bold text-gray-900">QR Code</h3>
               <button
@@ -617,7 +630,7 @@ export default function Dashboard() {
                   </button>
                 ) : (
                   <button
-                    onClick={() => handleDeleteQr(selectedLinkForQr.shortCode)}
+                    onClick={() => triggerDeleteQrConfirm(selectedLinkForQr.shortCode)}
                     disabled={isDeletingQr}
                     className="w-full py-3 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
                   >
@@ -636,6 +649,41 @@ export default function Dashboard() {
                   Scan to share {window.location.host}/r/{selectedLinkForQr.shortCode}
                 </p>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete QR Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-6 text-center space-y-6">
+            <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto text-red-600">
+              <Trash2 className="w-8 h-8" />
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-xl font-bold text-gray-900">Delete QR Code?</h3>
+              <p className="text-gray-500 text-sm">
+                This will permanently remove the QR code for this link. You can always regenerate it later.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-2 pt-2">
+              <button
+                onClick={handleDeleteQr}
+                disabled={isDeletingQr}
+                className="w-full py-3 bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-white rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
+              >
+                {isDeletingQr ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Yes, Delete QR Code'}
+              </button>
+              <button
+                onClick={() => { setShowDeleteConfirm(false); setQrCodeToRemove(null); }}
+                disabled={isDeletingQr}
+                className="w-full py-3 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl font-semibold transition-all"
+              >
+                Cancel
+              </button>
             </div>
           </div>
         </div>

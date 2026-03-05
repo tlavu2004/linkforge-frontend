@@ -1,18 +1,15 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
 import { apiClient } from '../api/axios'
 import type { ShortLinkResponse, ApiResponse } from '../types'
-import { Copy, Check, Link as LinkIcon, AlertCircle, LayoutDashboard, Calendar, X } from 'lucide-react'
+import { Copy, Check, Link as LinkIcon, AlertCircle, LayoutDashboard } from 'lucide-react'
 import { useAuthStore } from '../store/useAuthStore'
 
 export default function Home() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
 
-  const dateInputRef = useRef<HTMLInputElement>(null)
-
   const [url, setUrl] = useState('')
-  const [expiresAt, setExpiresAt] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState<ShortLinkResponse | null>(null)
@@ -31,9 +28,6 @@ export default function Home() {
 
     try {
       const payload: any = { originalUrl: url }
-      if (expiresAt) {
-        payload.expiresAt = new Date(expiresAt).toISOString()
-      }
 
       const { data } = await apiClient.post<ApiResponse<ShortLinkResponse>>('/links', payload)
       if (data.success) {
@@ -107,57 +101,10 @@ export default function Home() {
                 />
               </div>
 
-              <div
-                className="w-full md:w-auto flex items-center border-t md:border-t-0 border-gray-100 md:border-l md:border-l-gray-200 group transition-colors hover:bg-gray-50/50 cursor-pointer select-none relative"
-                onClick={(e) => {
-                  const target = e.target as HTMLElement;
-                  if (target.closest('button')) return;
-                  try {
-                    dateInputRef.current?.showPicker();
-                  } catch (err) {
-                    dateInputRef.current?.focus();
-                  }
-                }}
-              >
-                <div className="flex items-center pl-4 md:pl-5 pr-3 md:pr-4 py-3 md:py-4 w-full justify-between gap-3 min-w-[210px] md:min-w-[250px]">
-                  <span className={`text-sm font-medium whitespace-nowrap ${expiresAt ? 'text-gray-900' : 'text-gray-400'}`}>
-                    {expiresAt
-                      ? new Date(expiresAt).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
-                      : 'dd/mm/yyyy hh:mm:ss'}
-                  </span>
-
-                  <div className="flex items-center gap-1 shrink-0">
-                    <div className="p-2 rounded-md hover:bg-gray-100 transition-colors text-gray-400">
-                      <Calendar className="w-4 h-4" />
-                    </div>
-                    <button
-                      type="button"
-                      disabled={!expiresAt}
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setExpiresAt(''); }}
-                      className={`p-2 rounded-md transition-colors ${expiresAt ? 'text-gray-400 hover:text-red-600 hover:bg-red-50' : 'text-gray-200 cursor-not-allowed opacity-50'}`}
-                      title={expiresAt ? "Clear expiration date" : ""}
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                <input
-                  ref={dateInputRef}
-                  type="datetime-local"
-                  step="1"
-                  value={expiresAt}
-                  onChange={(e) => setExpiresAt(e.target.value)}
-                  className="absolute bottom-0 right-8 w-px h-px opacity-0 pointer-events-none"
-                  style={{ colorScheme: 'light' }}
-                  tabIndex={-1}
-                />
-              </div>
-
               <button
                 type="submit"
                 disabled={isLoading || !url}
-                className="w-full md:w-auto bg-primary-600 hover:bg-primary-700 disabled:bg-primary-300 disabled:cursor-not-allowed text-white px-8 py-4 md:py-4 rounded-xl md:rounded-full font-semibold transition-all shadow-md hover:shadow-lg flex justify-center items-center h-full"
+                className="w-full md:w-auto bg-primary-600 hover:bg-primary-700 disabled:bg-primary-300 disabled:cursor-not-allowed text-white px-10 py-4 md:py-4 rounded-xl md:rounded-full font-semibold transition-all shadow-md hover:shadow-lg flex justify-center items-center h-full min-w-[160px]"
               >
                 {isLoading ? (
                   <span className="flex items-center">
