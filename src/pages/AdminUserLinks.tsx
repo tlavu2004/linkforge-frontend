@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'react-hot-toast'
 import { apiClient } from '../api/axios'
 import type { ApiResponse, UserLinkResponse, PageResponse } from '../types'
-import { LinkIcon, Copy, Check, Loader2, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUpDown, MousePointerClick, Clock, Search, ArrowLeft } from 'lucide-react'
+import { LinkIcon, Copy, Check, Loader2, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUpDown, MousePointerClick, Clock, Search, ArrowLeft, QrCode, X } from 'lucide-react'
 import { useParams, useNavigate } from 'react-router-dom'
 
 type SortField = 'createdAt' | 'expiresAt' | 'originalUrl' | 'clickCount'
@@ -24,6 +24,9 @@ export default function AdminUserLinks() {
   const [debouncedKeyword, setDebouncedKeyword] = useState('')
   const [jumpPage, setJumpPage] = useState('')
   const [copiedLinkUrl, setCopiedLinkUrl] = useState<string | null>(null)
+  const [selectedLinkForQr, setSelectedLinkForQr] = useState<UserLinkResponse | null>(null)
+  const [isGeneratingQr, setIsGeneratingQr] = useState(false)
+  const [isDeletingQr, setIsDeletingQr] = useState(false)
 
   // Debounce search keyword
   useEffect(() => {
@@ -79,6 +82,45 @@ export default function AdminUserLinks() {
       toast.error(err.response?.data?.message || 'Failed to delete link.')
     } finally {
       setDeletingCode(null)
+    }
+  }
+
+  const handleGenerateQr = async (shortCode: string) => {
+    setIsGeneratingQr(true)
+    try {
+      const { data } = await apiClient.post<ApiResponse<any>>(`/admin/users/${userId}/links/${shortCode}/qr-code`)
+      if (data.success) {
+        toast.success('QR Code generated!')
+        if (selectedLinkForQr && selectedLinkForQr.shortCode === shortCode) {
+          setSelectedLinkForQr({ ...selectedLinkForQr, qrCode: data.data.qrCode })
+        }
+        // Update the link in the list
+        setLinks(prev => prev.map(l => l.shortCode === shortCode ? { ...l, qrCode: data.data.qrCode } : l))
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to generate QR code.')
+    } finally {
+      setIsGeneratingQr(false)
+    }
+  }
+
+  const handleDeleteQr = async (shortCode: string) => {
+    if (!confirm('Are you sure you want to delete this QR code?')) return
+    setIsDeletingQr(true)
+    try {
+      const { data } = await apiClient.delete<ApiResponse<any>>(`/admin/users/${userId}/links/${shortCode}/qr-code`)
+      if (data.success) {
+        toast.success('QR Code deleted!')
+        if (selectedLinkForQr && selectedLinkForQr.shortCode === shortCode) {
+          setSelectedLinkForQr({ ...selectedLinkForQr, qrCode: undefined })
+        }
+        // Update the link in the list
+        setLinks(prev => prev.map(l => l.shortCode === shortCode ? { ...l, qrCode: undefined } : l))
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to delete QR code.')
+    } finally {
+      setIsDeletingQr(false)
     }
   }
 
@@ -222,17 +264,26 @@ export default function AdminUserLinks() {
                       <Clock className="w-3.5 h-3.5 text-amber-500" />
                       <span>{link.expiresAt ? formatDate(link.expiresAt) : 'Never'}</span>
                     </div>
-                    <button
-                      onClick={() => handleDeleteLink(link.shortCode)}
-                      disabled={deletingCode === link.shortCode}
-                      className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
-                      title="Delete link"
-                    >
-                      {deletingCode === link.shortCode
-                        ? <Loader2 className="w-4 h-4 animate-spin" />
-                        : <Trash2 className="w-4 h-4" />
-                      }
-                    </button>
+                    <div className="flex items-center gap-1 border-l border-gray-200 pl-4 ml-2">
+                      <button
+                        onClick={() => setSelectedLinkForQr(link)}
+                        className={`p-2 rounded-lg transition-colors ${link.qrCode ? 'text-primary-600 bg-primary-50 hover:bg-primary-100' : 'text-gray-400 hover:text-primary-600 hover:bg-primary-50'}`}
+                        title={link.qrCode ? "View QR Code" : "Generate QR Code"}
+                      >
+                        <QrCode className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteLink(link.shortCode)}
+                        disabled={deletingCode === link.shortCode}
+                        className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+                        title="Delete link"
+                      >
+                        {deletingCode === link.shortCode
+                          ? <Loader2 className="w-4 h-4 animate-spin" />
+                          : <Trash2 className="w-4 h-4" />
+                        }
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -322,6 +373,66 @@ export default function AdminUserLinks() {
           </>
         )}
       </section>
+
+      {/* QR Code Modal */}
+      {selectedLinkForQr && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-gray-900">QR Code</h3>
+              <button
+                onClick={() => setSelectedLinkForQr(null)}
+                className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-500"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-8 flex flex-col items-center">
+              {selectedLinkForQr.qrCode ? (
+                <div className="bg-white p-4 rounded-2xl shadow-inner border border-gray-100 mb-6">
+                  <img
+                    src={`data:image/png;base64,${selectedLinkForQr.qrCode}`}
+                    alt="QR Code"
+                    className="w-48 h-48"
+                  />
+                </div>
+              ) : (
+                <div className="w-48 h-48 rounded-2xl bg-gray-50 border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-center p-6 mb-6">
+                  <QrCode className="w-12 h-12 text-gray-300 mb-2" />
+                  <p className="text-sm text-gray-400 font-medium">No QR code generated yet</p>
+                </div>
+              )}
+
+              <div className="w-full space-y-3">
+                {!selectedLinkForQr.qrCode ? (
+                  <button
+                    onClick={() => handleGenerateQr(selectedLinkForQr.shortCode)}
+                    disabled={isGeneratingQr}
+                    className="w-full py-3 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed text-white rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
+                  >
+                    {isGeneratingQr ? <Loader2 className="w-5 h-5 animate-spin" /> : <QrCode className="w-5 h-5" />}
+                    Generate QR Code
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleDeleteQr(selectedLinkForQr.shortCode)}
+                    disabled={isDeletingQr}
+                    className="w-full py-3 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
+                  >
+                    {isDeletingQr ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-5 h-5" />}
+                    Delete QR Code
+                  </button>
+                )}
+
+                <p className="text-[10px] text-center text-gray-400 font-medium">
+                  Scan to share {window.location.host}/r/{selectedLinkForQr.shortCode}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
