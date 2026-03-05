@@ -16,6 +16,7 @@ import NotFound from './pages/NotFound'
 import DeleteLink from './pages/DeleteLink'
 import VerifyEmail from './pages/VerifyEmail'
 import ForgotPassword from './pages/ForgotPassword'
+import ExpiredLink from './pages/ExpiredLink'
 
 export default function App() {
   return (
@@ -27,6 +28,7 @@ export default function App() {
 
         <Route path="/" element={<RootLayout />}>
           <Route index element={<Home />} />
+          <Route path="/expired" element={<ExpiredLink />} />
           <Route path="/delete" element={<DeleteLink />} />
           <Route path="*" element={<NotFound />} />
         </Route>
