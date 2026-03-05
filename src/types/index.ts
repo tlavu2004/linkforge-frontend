@@ -5,6 +5,7 @@ export interface ShortLinkResponse {
   expiresAt?: string
   deleteToken?: string
   skipAds?: boolean
+  qrCode?: string
   '@class': string
 }
 
@@ -41,6 +42,7 @@ export interface UserLinkResponse {
   expiresAt?: string
   clickCount: number
   expired: boolean
+  qrCode?: string
 }
 
 export interface PageResponse<T> {
