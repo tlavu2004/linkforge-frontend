@@ -1,73 +1,73 @@
-# React + TypeScript + Vite
+# LinkForge - Modern Frontend Interface
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern and intuitive user interface for LinkForge, built with **React**, **TypeScript**, and **Vite**. Provides the dashboard, link management, VIP payment flow, and admin panel that connects to the LinkForge Backend API.
 
-Currently, two official plugins are available:
+> [!IMPORTANT]
+> This frontend requires the **Backend API** to be running. Please read the Backend README for full setup and feature documentation:
+> [LinkForge Backend](https://github.com/tlavu2004/linkforge-backend)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Framework:** React 18+
+- **Language:** TypeScript
+- **Build Tool:** Vite
+- **Styling:** Modern CSS
+- **Deployment:** Vercel (Recommended)
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Getting Started
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Prerequisites
+- Node.js 18+
+- npm or yarn
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### Installation
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+# 1. Clone the repository
+git clone https://github.com/tlavu2004/linkforge-frontend.git
+cd linkforge-frontend
+
+# 2. Install dependencies
+npm install
+
+# 3. Create environment file
+cp .env.example .env
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Update `VITE_API_BASE_URL` in `.env` to point to your running backend (default: `http://localhost:8080`).
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Development
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run dev
 ```
+
+The app will be available at `http://localhost:5173`.
+
+### Production Build
+
+```bash
+npm run build
+```
+
+---
+
+## Deployment
+
+The project includes `vercel.json` for one-click deployment to **Vercel**. Make sure to configure the `VITE_API_BASE_URL` environment variable in Vercel's dashboard to point to your production backend URL.
+
+---
+
+## Note
+
+All business logic, API documentation, payment integration details, and architecture decisions are documented in the [Backend README](https://github.com/tlavu2004/linkforge-backend). Please read it thoroughly for a complete understanding of the system.
+
+---
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
