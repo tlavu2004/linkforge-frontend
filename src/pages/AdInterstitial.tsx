@@ -112,11 +112,11 @@ export default function AdInterstitial() {
         {/* Mock background pattern */}
         <div className="absolute inset-0 bg-[#f8fafc]" style={{ backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)', backgroundSize: '24px 24px' }}></div>
 
-        <div className="relative w-full max-w-4xl bg-white aspect-video rounded-3xl border border-gray-200 shadow-xl overflow-hidden flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-indigo-50 to-primary-50">
-          <div className="absolute top-4 left-4 bg-gray-900/10 text-gray-500 text-xs px-2 py-1 rounded uppercase tracking-wider font-bold">Advertisement</div>
+        <div className="relative w-full max-w-4xl bg-white md:aspect-video min-h-[400px] rounded-3xl border border-gray-200 shadow-xl overflow-hidden flex flex-col items-center justify-center p-6 md:p-8 text-center bg-gradient-to-br from-indigo-50 to-primary-50">
+          <div className="absolute top-6 left-6 bg-gray-900/10 text-gray-500 text-[10px] md:text-xs px-2 py-1 rounded uppercase tracking-wider font-bold">Advertisement</div>
 
-          <h2 className="text-3xl md:text-5xl font-black text-gray-900 mb-6 drop-shadow-sm text-balance">Space Available For Rent!</h2>
-          <p className="text-lg md:text-xl text-gray-600 max-w-2xl mb-8">Reach millions of users who are waiting to go to their destination URLs. Your ad could be here.</p>
+          <h2 className="text-2xl md:text-5xl font-black text-gray-900 mb-4 md:mb-6 drop-shadow-sm text-balance pt-8 md:pt-0">Space Available For Rent!</h2>
+          <p className="text-base md:text-xl text-gray-600 max-w-2xl mb-6 md:mb-8">Reach millions of users who are waiting to go to their destination URLs. Your ad could be here.</p>
 
           <div className="inline-flex gap-4">
             <button className="bg-gray-900 text-white px-8 py-4 flex items-center gap-2 rounded-xl font-bold shadow-lg hover:bg-gray-800 transition">
