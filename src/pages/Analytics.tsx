@@ -14,8 +14,21 @@ import {
   ExternalLink,
   Calendar,
   Monitor,
-  Tablet
+  Tablet,
+  TrendingUp
 } from 'lucide-react'
+import {
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  PieChart,
+  Pie,
+  Cell
+} from 'recharts'
 
 export default function Analytics() {
   const { shortCode } = useParams<{ shortCode: string }>()
@@ -49,6 +62,29 @@ export default function Analytics() {
     if (!data || Object.keys(data).length === 0) return 'N/A'
     return Object.entries(data).reduce((a, b) => a[1] > b[1] ? a : b)[0]
   }
+
+  const chartData = stats ? Object.entries(stats.dailyStats)
+    .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
+    .map(([date, count]) => ({
+      date: new Date(date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }),
+      fullDate: date,
+      clicks: count
+    })) : []
+
+  const deviceData = stats ? Object.entries(stats.clicksByDeviceType).map(([name, value]) => ({
+    name,
+    value
+  })) : []
+
+  const referrerData = stats ? Object.entries(stats.clicksByReferrer)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([name, value]) => ({
+      name,
+      value
+    })) : []
+
+  const COLORS = ['#4f46e5', '#818cf8', '#c7d2fe', '#e0e7ff']
 
   const getDeviceIcon = (device: string) => {
     switch (device) {
@@ -183,48 +219,155 @@ export default function Analytics() {
 
       {/* Main Content placeholders */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Time-series Chart Placeholder (Task 4.7) */}
-        <div className="lg:col-span-2 bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm min-h-[400px] flex flex-col">
+        {/* Time-series Chart */}
+        <div className="lg:col-span-2 bg-white p-6 md:p-8 rounded-[2.5rem] border border-gray-100 shadow-sm min-h-[450px] flex flex-col">
            <div className="flex items-center justify-between mb-8">
-             <h3 className="font-bold text-lg text-gray-900 flex items-center gap-2">
-               <Calendar className="w-5 h-5 text-primary-500" />
-               Click Performance
-             </h3>
-             <div className="flex gap-2">
-               <div className="h-2 w-8 bg-primary-100 rounded-full" />
-               <div className="h-2 w-8 bg-gray-100 rounded-full" />
+             <div>
+               <h3 className="font-bold text-lg text-gray-900 flex items-center gap-2">
+                 <Calendar className="w-5 h-5 text-primary-500" />
+                 Click Performance
+               </h3>
+               <p className="text-xs text-gray-400 font-medium mt-1">Daily interaction trends</p>
+             </div>
+             <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 rounded-xl">
+                <TrendingUp className="w-4 h-4 text-green-600" />
+                <span className="text-xs font-bold text-green-700">Live</span>
              </div>
            </div>
            
-           <div className="flex-1 border-2 border-dashed border-gray-50 rounded-3xl flex flex-col items-center justify-center text-gray-400 gap-3">
-              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center">
-                <BarChart3 className="w-8 h-8 opacity-20" />
-              </div>
-              <p className="font-medium">Performance Chart coming in Task 4.7</p>
+           <div className="flex-1 w-full min-h-[300px]">
+              {chartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartData}>
+                    <defs>
+                      <linearGradient id="colorClicks" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.1}/>
+                        <stop offset="95%" stopColor="#4f46e5" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                    <XAxis 
+                      dataKey="date" 
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 10, fill: '#9ca3af', fontWeight: 500 }}
+                      dy={10}
+                    />
+                    <YAxis 
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 10, fill: '#9ca3af', fontWeight: 500 }}
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        borderRadius: '16px', 
+                        border: 'none', 
+                        boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                        padding: '12px'
+                      }}
+                      itemStyle={{ color: '#4f46e5', fontWeight: 700 }}
+                      cursor={{ stroke: '#4f46e5', strokeWidth: 2, strokeDasharray: '4 4' }}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="clicks" 
+                      stroke="#4f46e5" 
+                      strokeWidth={3}
+                      fillOpacity={1} 
+                      fill="url(#colorClicks)"
+                      animationDuration={1500}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-2">
+                  <BarChart3 className="w-8 h-8 opacity-20" />
+                  <p className="text-sm font-medium">No tracking data for this period</p>
+                </div>
+              )}
            </div>
         </div>
 
-        {/* Side panels placeholders (Task 4.8) */}
+        {/* Side panels */}
         <div className="space-y-6">
            {/* Device Breakdown */}
-           <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm min-h-[250px] flex flex-col">
-             <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+           <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm min-h-[300px] flex flex-col">
+             <h3 className="font-bold text-gray-900 mb-6 flex items-center gap-2">
                <Smartphone className="w-4 h-4 text-orange-500" />
                Devices
              </h3>
-             <div className="flex-1 border-2 border-dashed border-gray-50 rounded-2xl flex items-center justify-center text-xs text-gray-400 italic">
-               Breakdown coming in Task 4.8
+             <div className="flex-1 flex items-center justify-center">
+                {deviceData.length > 0 ? (
+                  <div className="w-full h-[200px] relative">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={deviceData}
+                          innerRadius={60}
+                          outerRadius={80}
+                          paddingAngle={5}
+                          dataKey="value"
+                          animationDuration={1000}
+                        >
+                          {deviceData.map((_, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                           contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    {/* Legend */}
+                    <div className="mt-4 space-y-2">
+                       {deviceData.map((entry, index) => (
+                         <div key={entry.name} className="flex items-center justify-between text-[10px]">
+                            <div className="flex items-center gap-2">
+                               <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                               <span className="font-medium text-gray-600 capitalize">{entry.name.toLowerCase()}</span>
+                            </div>
+                            <span className="font-bold text-gray-900">{entry.value}</span>
+                         </div>
+                       ))}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-400 italic">No device data</p>
+                )}
              </div>
            </div>
 
            {/* Referrer Breakdown */}
-           <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm min-h-[250px] flex flex-col">
-             <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+           <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm min-h-[300px] flex flex-col">
+             <h3 className="font-bold text-gray-900 mb-6 flex items-center gap-2">
                <Globe className="w-4 h-4 text-blue-500" />
-               Referrers
+               Top Referrers
              </h3>
-             <div className="flex-1 border-2 border-dashed border-gray-50 rounded-2xl flex items-center justify-center text-xs text-gray-400 italic">
-               Breakdown coming in Task 4.8
+             <div className="flex-1 flex flex-col gap-4">
+                {referrerData.length > 0 ? (
+                  referrerData.map((ref, index) => {
+                    const total = Object.values(stats.clicksByReferrer).reduce((a, b) => a + b, 0)
+                    const percent = ((ref.value / total) * 100).toFixed(0)
+                    return (
+                      <div key={ref.name} className="space-y-1">
+                        <div className="flex justify-between text-[10px] font-bold">
+                          <span className="text-gray-700 truncate max-w-[150px]">{ref.name}</span>
+                          <span className="text-primary-600">{percent}%</span>
+                        </div>
+                        <div className="w-full h-1.5 bg-gray-50 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-primary-500 rounded-full" 
+                            style={{ width: `${percent}%`, transition: 'width 1s ease-out', transitionDelay: `${index * 100}ms` }} 
+                          />
+                        </div>
+                      </div>
+                    )
+                  })
+                ) : (
+                  <div className="flex-1 flex items-center justify-center">
+                    <p className="text-xs text-gray-400 italic">No referrer data</p>
+                  </div>
+                )}
              </div>
            </div>
         </div>
