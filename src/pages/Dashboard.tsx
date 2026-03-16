@@ -280,7 +280,7 @@ export default function Dashboard() {
                 />
               </div>
 
-              {(user?.vip || user?.role === 'ADMIN') && (
+              {user && (
                 <div
                   className="w-full md:w-auto flex items-center border-t md:border-t-0 border-gray-100 md:border-l md:border-l-gray-200 group transition-colors hover:bg-gray-50/50 cursor-pointer select-none relative"
                   onClick={(e) => {
