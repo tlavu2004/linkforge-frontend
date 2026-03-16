@@ -15,7 +15,8 @@ import {
   Calendar,
   Monitor,
   Tablet,
-  TrendingUp
+  TrendingUp,
+  Search
 } from 'lucide-react'
 import {
   XAxis,
@@ -118,13 +119,22 @@ export default function Analytics() {
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-red-800 mb-2">Oops! Something went wrong</h2>
           <p className="text-red-600 mb-6">{error || 'Could not load analytics for this link.'}</p>
-          <Link 
-            to={isPublicView ? "/" : "/dashboard"} 
-            className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-red-200 text-red-700 rounded-xl font-semibold hover:bg-red-50 transition-colors"
-          >
-            <ChevronLeft className="w-5 h-5" />
-            {isPublicView ? 'Back to Home' : 'Back to Dashboard'}
-          </Link>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+            <Link 
+              to={isPublicView ? "/" : "/dashboard"} 
+              className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-red-200 text-red-700 rounded-xl font-semibold hover:bg-red-50 transition-colors w-full sm:w-auto justify-center"
+            >
+              <ChevronLeft className="w-5 h-5" />
+              {isPublicView ? 'Back to Home' : 'Back to Dashboard'}
+            </Link>
+            <Link 
+              to="/analytics" 
+              className="inline-flex items-center gap-2 px-6 py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-colors shadow-lg shadow-red-200 w-full sm:w-auto justify-center"
+            >
+              <Search className="w-5 h-5" />
+              Try Another Link
+            </Link>
+          </div>
         </div>
       </div>
     )
@@ -167,13 +177,22 @@ export default function Analytics() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm">
-           <button className="px-4 py-2 bg-primary-600 text-white rounded-xl text-sm font-semibold shadow-sm">
-             Last 30 Days
-           </button>
-           <button className="px-4 py-2 text-gray-500 hover:bg-gray-50 rounded-xl text-sm font-semibold transition-colors">
-             All Time
-           </button>
+        <div className="flex items-center gap-3">
+          <Link
+            to="/analytics"
+            className="hidden sm:flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-xl transition-colors font-medium border border-indigo-100 shadow-sm"
+          >
+            <Search className="w-4 h-4" />
+            Try Another
+          </Link>
+          <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm">
+             <button className="px-4 py-2 bg-primary-600 text-white rounded-xl text-sm font-semibold shadow-sm">
+               Last 30 Days
+             </button>
+             <button className="px-4 py-2 text-gray-500 hover:bg-gray-50 rounded-xl text-sm font-semibold transition-colors">
+               All Time
+             </button>
+          </div>
         </div>
       </div>
 

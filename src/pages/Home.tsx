@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
 import { apiClient } from '../api/axios'
 import type { ShortLinkResponse, ApiResponse } from '../types'
-import { Copy, Check, Link as LinkIcon, AlertCircle, LayoutDashboard } from 'lucide-react'
+import { Copy, Check, Link as LinkIcon, AlertCircle, LayoutDashboard, BarChart3 } from 'lucide-react'
 import { useAuthStore } from '../store/useAuthStore'
 
 export default function Home() {
@@ -59,18 +59,17 @@ export default function Home() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-16 flex flex-col justify-center min-h-[calc(100vh-4rem)]">
-      <div className="max-w-3xl mx-auto w-full text-center space-y-10">
-        <div className="space-y-6">
-          <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight text-gray-900 text-balance leading-tight">
+    <div className="container mx-auto px-4 py-4 flex flex-col justify-center h-full">
+      <div className="max-w-3xl mx-auto w-full text-center space-y-6">
+        <div className="space-y-4">
+          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-gray-900 text-balance leading-tight">
             Shorten Your Links <br className="hidden sm:block" />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-indigo-600">
               Expand Your Reach
             </span>
           </h1>
-          <p className="text-lg md:text-xl text-gray-500 text-balance max-w-2xl mx-auto">
-            LinkForge is a powerful, secure, and fast URL shortener designed to enhance your online presence.
-            Create, track, and manage your links effortlessly.
+          <p className="text-base md:text-lg text-gray-500 text-balance max-w-xl mx-auto">
+            LinkForge helps you create, track, and manage your links effortlessly with power and security.
           </p>
         </div>
 
@@ -87,15 +86,15 @@ export default function Home() {
           </div>
         ) : (
           <>
-            <form onSubmit={handleShorten} className="bg-white p-2 md:p-3 rounded-2xl md:rounded-full shadow-xl flex flex-col md:flex-row items-center max-w-2xl mx-auto border border-gray-100 focus-within:ring-4 focus-within:ring-primary-100 transition-all">
+            <form onSubmit={handleShorten} className="mt-20 bg-white p-1.5 rounded-2xl md:rounded-full shadow-xl flex flex-col md:flex-row items-center max-w-xl mx-auto border border-gray-100 focus-within:ring-4 focus-within:ring-primary-100 transition-all">
               <div className="flex-1 w-full flex items-center px-4 md:px-6 py-3 md:py-4">
                 <LinkIcon className="text-gray-400 w-5 h-5 mr-3 shrink-0" />
                 <input
                   type="url"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
-                  placeholder="Paste your long URL here... e.g., https://example.com"
-                  className="w-full bg-transparent outline-none text-gray-900 placeholder:text-gray-400 font-medium text-lg"
+                  placeholder="Paste your long URL here..."
+                  className="w-full bg-transparent outline-none text-gray-900 placeholder:text-gray-400 font-medium text-base"
                   required
                   disabled={isLoading}
                 />
@@ -104,7 +103,7 @@ export default function Home() {
               <button
                 type="submit"
                 disabled={isLoading || !url}
-                className="w-full md:w-auto bg-primary-600 hover:bg-primary-700 disabled:bg-primary-300 disabled:cursor-not-allowed text-white px-10 py-4 md:py-4 rounded-xl md:rounded-full font-semibold transition-all shadow-md hover:shadow-lg flex justify-center items-center h-full min-w-[160px]"
+                className="w-full md:w-auto bg-primary-600 hover:bg-primary-700 disabled:bg-primary-300 disabled:cursor-not-allowed text-white px-8 py-3 md:py-3.5 rounded-xl md:rounded-full font-semibold transition-all shadow-md hover:shadow-lg flex justify-center items-center h-full min-w-[140px]"
               >
                 {isLoading ? (
                   <span className="flex items-center">
@@ -134,13 +133,22 @@ export default function Home() {
                       <div className="flex-1 bg-gray-50 text-gray-900 border border-gray-200 rounded-xl px-4 py-3 font-medium truncate text-lg">
                         {window.location.origin}/r/{result.shortCode}
                       </div>
-                      <button
-                        onClick={() => copyToClipboard(`${window.location.origin}/r/${result.shortCode}`, 'url')}
-                        className="shrink-0 p-3 bg-primary-50 text-primary-600 hover:bg-primary-100 rounded-xl transition flex items-center justify-center w-12 h-12"
-                        title="Copy short link"
-                      >
-                        {copiedUrl ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5" />}
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => copyToClipboard(`${window.location.origin}/r/${result.shortCode}`, 'url')}
+                          className="shrink-0 p-3 bg-primary-50 text-primary-600 hover:bg-primary-100 rounded-xl transition flex items-center justify-center w-12 h-12"
+                          title="Copy short link"
+                        >
+                          {copiedUrl ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5" />}
+                        </button>
+                        <Link
+                          to={`/analytics/${result.shortCode}${result.deleteToken ? `?token=${result.deleteToken}` : ''}`}
+                          className="shrink-0 p-3 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-xl transition flex items-center justify-center w-12 h-12"
+                          title="View Analytics"
+                        >
+                          <BarChart3 className="w-5 h-5" />
+                        </Link>
+                      </div>
                     </div>
                   </div>
 

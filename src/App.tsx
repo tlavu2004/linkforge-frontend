@@ -15,6 +15,7 @@ import AdminUserLinks from './pages/AdminUserLinks'
 import NotFound from './pages/NotFound'
 import DeleteLink from './pages/DeleteLink'
 import Analytics from './pages/Analytics'
+import AnalyticsLookup from './pages/AnalyticsLookup'
 import VerifyEmail from './pages/VerifyEmail'
 import ForgotPassword from './pages/ForgotPassword'
 import ExpiredLink from './pages/ExpiredLink'
@@ -31,6 +32,7 @@ export default function App() {
           <Route index element={<Home />} />
           <Route path="/expired" element={<ExpiredLink />} />
           <Route path="/delete" element={<DeleteLink />} />
+          <Route path="/analytics" element={<AnalyticsLookup />} />
           <Route path="/analytics/:shortCode" element={<Analytics />} />
           <Route path="*" element={<NotFound />} />
         </Route>
