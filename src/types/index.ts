@@ -63,3 +63,15 @@ export interface AdminUserResponse {
   vip: boolean
   vipExpiresAt?: string
 }
+
+export type DeviceType = 'DESKTOP' | 'MOBILE' | 'TABLET'
+
+export interface LinkStatsResponse {
+  shortCode: string
+  totalClicks: number
+  uniqueVisitors: number
+  clicksByCountry: Record<string, number>
+  clicksByDeviceType: Record<DeviceType, number>
+  clicksByReferrer: Record<string, number>
+  dailyStats: Record<string, number>
+}

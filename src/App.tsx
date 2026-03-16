@@ -14,6 +14,7 @@ import AdminDashboard from './pages/AdminDashboard'
 import AdminUserLinks from './pages/AdminUserLinks'
 import NotFound from './pages/NotFound'
 import DeleteLink from './pages/DeleteLink'
+import Analytics from './pages/Analytics'
 import VerifyEmail from './pages/VerifyEmail'
 import ForgotPassword from './pages/ForgotPassword'
 import ExpiredLink from './pages/ExpiredLink'
@@ -42,6 +43,7 @@ export default function App() {
 
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard/links/:shortCode/analytics" element={<Analytics />} />
           <Route path="/vip-upgrade" element={<VipUpgrade />} />
           <Route path="/vnpay-return" element={<VnPayReturn />} />
           <Route path="/admin" element={<AdminDashboard />} />

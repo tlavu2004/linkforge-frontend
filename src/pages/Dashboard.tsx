@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { toast } from 'react-hot-toast'
 import { apiClient } from '../api/axios'
 import type { ShortLinkResponse, ApiResponse, UserLinkResponse, PageResponse } from '../types'
-import { LinkIcon, Copy, Check, ExternalLink, Loader2, AlertCircle, LayoutDashboard, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUpDown, MousePointerClick, Clock, Search, Calendar, X, QrCode, Star } from 'lucide-react'
+import { LinkIcon, Copy, Check, ExternalLink, Loader2, AlertCircle, LayoutDashboard, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUpDown, MousePointerClick, Clock, Search, Calendar, X, QrCode, Star, BarChart3 } from 'lucide-react'
 import { useAuthStore } from '../store/useAuthStore'
 import { Link } from 'react-router-dom'
 
@@ -476,6 +476,13 @@ export default function Dashboard() {
                         <span>{link.expiresAt ? formatDate(link.expiresAt) : 'Never'}</span>
                       </div>
                       <div className="flex items-center gap-1 border-l border-gray-200 pl-4 ml-2">
+                        <Link
+                          to={`/dashboard/links/${link.shortCode}/analytics`}
+                          className="p-2 rounded-lg text-gray-400 hover:text-primary-600 hover:bg-primary-50 transition-colors"
+                          title="View Analytics"
+                        >
+                          <BarChart3 className="w-4 h-4" />
+                        </Link>
                         <button
                           onClick={() => setSelectedLinkForQr(link)}
                           className={`p-2 rounded-lg transition-colors ${link.qrCode ? 'text-primary-600 bg-primary-50 hover:bg-primary-100' : 'text-gray-400 hover:text-primary-600 hover:bg-primary-50'}`}
