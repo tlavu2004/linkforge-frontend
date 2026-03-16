@@ -39,6 +39,7 @@ export default function Analytics() {
   const [stats, setStats] = useState<LinkStatsResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
+  const [dateRange, setDateRange] = useState<'30d' | 'all'>('30d')
 
   const isPublicView = !location.pathname.startsWith('/dashboard')
 
@@ -47,8 +48,22 @@ export default function Analytics() {
     setIsLoading(true)
     setError('')
     try {
+      const params: any = { token }
+      
+      if (dateRange === '30d') {
+        const to = new Date().toISOString()
+        const from = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+        params.from = from
+        params.to = to
+      } else {
+        // "All Time": backend defaults to 30 days if from is null, 
+        // so we send a very old date to get all data.
+        params.from = '2024-01-01T00:00:00Z' 
+        params.to = new Date().toISOString()
+      }
+
       const { data } = await apiClient.get<ApiResponse<LinkStatsResponse>>(`/analytics/${shortCode}`, {
-        params: { token }
+        params
       })
       if (data.success) {
         setStats(data.data)
@@ -60,7 +75,7 @@ export default function Analytics() {
     } finally {
       setIsLoading(false)
     }
-  }, [shortCode])
+  }, [shortCode, token, dateRange])
 
   useEffect(() => {
     fetchAnalytics()
@@ -186,10 +201,16 @@ export default function Analytics() {
             Try Another
           </Link>
           <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm">
-             <button className="px-4 py-2 bg-primary-600 text-white rounded-xl text-sm font-semibold shadow-sm">
+             <button 
+              onClick={() => setDateRange('30d')}
+              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${dateRange === '30d' ? 'bg-primary-600 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}
+             >
                Last 30 Days
              </button>
-             <button className="px-4 py-2 text-gray-500 hover:bg-gray-50 rounded-xl text-sm font-semibold transition-colors">
+             <button 
+              onClick={() => setDateRange('all')}
+              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${dateRange === 'all' ? 'bg-primary-600 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}
+             >
                All Time
              </button>
           </div>
