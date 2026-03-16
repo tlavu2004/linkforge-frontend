@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useSearchParams, useLocation } from 'react-router-dom'
 import { apiClient } from '../api/axios'
 import type { LinkStatsResponse, ApiResponse } from '../types'
 import { 
@@ -32,16 +32,23 @@ import {
 
 export default function Analytics() {
   const { shortCode } = useParams<{ shortCode: string }>()
+  const [searchParams] = useSearchParams()
+  const location = useLocation()
+  const token = searchParams.get('token')
   const [stats, setStats] = useState<LinkStatsResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
+
+  const isPublicView = !location.pathname.startsWith('/dashboard')
 
   const fetchAnalytics = useCallback(async () => {
     if (!shortCode) return
     setIsLoading(true)
     setError('')
     try {
-      const { data } = await apiClient.get<ApiResponse<LinkStatsResponse>>(`/analytics/${shortCode}`)
+      const { data } = await apiClient.get<ApiResponse<LinkStatsResponse>>(`/analytics/${shortCode}`, {
+        params: { token }
+      })
       if (data.success) {
         setStats(data.data)
       } else {
@@ -112,11 +119,11 @@ export default function Analytics() {
           <h2 className="text-xl font-bold text-red-800 mb-2">Oops! Something went wrong</h2>
           <p className="text-red-600 mb-6">{error || 'Could not load analytics for this link.'}</p>
           <Link 
-            to="/dashboard" 
+            to={isPublicView ? "/" : "/dashboard"} 
             className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-red-200 text-red-700 rounded-xl font-semibold hover:bg-red-50 transition-colors"
           >
             <ChevronLeft className="w-5 h-5" />
-            Back to Dashboard
+            {isPublicView ? 'Back to Home' : 'Back to Dashboard'}
           </Link>
         </div>
       </div>
@@ -132,9 +139,9 @@ export default function Analytics() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <Link 
-            to="/dashboard" 
+            to={isPublicView ? "/" : "/dashboard"} 
             className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-500"
-            title="Back to Dashboard"
+            title={isPublicView ? "Back to Home" : "Back to Dashboard"}
           >
             <ChevronLeft className="w-6 h-6" />
           </Link>

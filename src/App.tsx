@@ -31,6 +31,7 @@ export default function App() {
           <Route index element={<Home />} />
           <Route path="/expired" element={<ExpiredLink />} />
           <Route path="/delete" element={<DeleteLink />} />
+          <Route path="/analytics/:shortCode" element={<Analytics />} />
           <Route path="*" element={<NotFound />} />
         </Route>
 
