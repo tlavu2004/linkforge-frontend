@@ -12,6 +12,7 @@ type SortDirection = 'asc' | 'desc'
 export default function Dashboard() {
   const [url, setUrl] = useState('')
   const [expiresAt, setExpiresAt] = useState('')
+  const [customAlias, setCustomAlias] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [recentLink, setRecentLink] = useState<ShortLinkResponse | null>(null)
@@ -102,11 +103,16 @@ export default function Dashboard() {
       if (expiresAt) {
         payload.expiresAt = new Date(expiresAt).toISOString()
       }
+      if (customAlias) {
+        payload.customAlias = customAlias
+      }
 
       const { data } = await apiClient.post<ApiResponse<ShortLinkResponse>>('/links', payload)
       if (data.success) {
         setRecentLink(data.data)
         setUrl('')
+        setCustomAlias('')
+        setExpiresAt('')
         toast.success('Link shortened successfully!')
         // Refresh link list
         fetchLinks()
@@ -258,6 +264,18 @@ export default function Dashboard() {
                   placeholder="Paste your long URL here..."
                   className="w-full bg-transparent outline-none text-gray-900 placeholder:text-gray-400 font-medium text-base md:text-lg pl-4 md:pl-14 pr-4 py-3 md:py-4"
                   required
+                  disabled={isLoading}
+                />
+              </div>
+
+              {/* Custom Alias Field */}
+              <div className="w-full md:w-auto flex items-center border-t md:border-t-0 border-gray-100 md:border-l md:border-l-gray-200 group transition-colors hover:bg-gray-50/50 relative">
+                <input
+                  type="text"
+                  value={customAlias}
+                  onChange={(e) => setCustomAlias(e.target.value.trim())}
+                  placeholder="Custom alias (optional)"
+                  className="w-full bg-transparent outline-none text-gray-900 placeholder:text-gray-400 font-medium text-sm md:text-base px-4 py-3 md:py-4 min-w-[150px] md:min-w-[180px]"
                   disabled={isLoading}
                 />
               </div>
