@@ -242,41 +242,65 @@ export default function Analytics() {
           </Link>
 
           {dateRange === 'custom' && (
-            <div className="flex items-center gap-2 bg-white p-1 rounded-2xl border border-gray-100 shadow-sm animate-in fade-in slide-in-from-right-2 h-14">
+            <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm animate-in fade-in slide-in-from-right-2 h-14">
+              {/* Start Date */}
               <div
-                className="flex flex-col px-4 cursor-pointer hover:bg-gray-50 rounded-xl transition-colors py-1.5"
+                className="flex items-center px-4 cursor-pointer hover:bg-gray-50 rounded-xl transition-colors h-full group/input relative"
                 onClick={() => {
                   const input = document.getElementById('analytics-start-date') as HTMLInputElement;
                   try { input.showPicker(); } catch (e) { input.focus(); }
                 }}
               >
-                <span className="text-[10px] text-gray-400 font-black uppercase leading-none mb-1">Start Point</span>
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-gray-400 font-black uppercase leading-none mb-1">Start Point</span>
+                  <span className={`text-xs font-bold whitespace-nowrap ${startDate ? 'text-gray-900' : 'text-gray-400'}`}>
+                    {startDate ? new Date(startDate).toLocaleString('vi-VN', { 
+                        day: '2-digit', month: '2-digit', year: 'numeric', 
+                        hour: '2-digit', minute: '2-digit', second: '2-digit', 
+                        hour12: false 
+                    }) : 'dd/mm/yyyy hh:mm:ss'}
+                  </span>
+                </div>
+                <Calendar className="w-3.5 h-3.5 ml-3 text-gray-400 group-hover/input:text-primary-500 transition-colors" />
                 <input
                   id="analytics-start-date"
                   type="datetime-local"
                   step="1"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="bg-transparent border-none p-0 text-xs font-bold focus:ring-0 cursor-pointer text-gray-700 h-5"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                   style={{ colorScheme: 'light' }}
                 />
               </div>
-              <div className="w-px h-8 bg-gray-100" />
+
+              <div className="w-px h-6 bg-gray-100" />
+
+              {/* End Date */}
               <div
-                className="flex flex-col px-4 cursor-pointer hover:bg-gray-50 rounded-xl transition-colors py-1.5"
+                className="flex items-center px-4 cursor-pointer hover:bg-gray-50 rounded-xl transition-colors h-full group/input relative"
                 onClick={() => {
                   const input = document.getElementById('analytics-end-date') as HTMLInputElement;
                   try { input.showPicker(); } catch (e) { input.focus(); }
                 }}
               >
-                <span className="text-[10px] text-gray-400 font-black uppercase leading-none mb-1">End Point</span>
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-gray-400 font-black uppercase leading-none mb-1">End Point</span>
+                  <span className={`text-xs font-bold whitespace-nowrap ${endDate ? 'text-gray-900' : 'text-gray-400'}`}>
+                    {endDate ? new Date(endDate).toLocaleString('vi-VN', { 
+                        day: '2-digit', month: '2-digit', year: 'numeric', 
+                        hour: '2-digit', minute: '2-digit', second: '2-digit', 
+                        hour12: false 
+                    }) : 'dd/mm/yyyy hh:mm:ss'}
+                  </span>
+                </div>
+                <Calendar className="w-3.5 h-3.5 ml-3 text-gray-400 group-hover/input:text-primary-500 transition-colors" />
                 <input
                   id="analytics-end-date"
                   type="datetime-local"
                   step="1"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="bg-transparent border-none p-0 text-xs font-bold focus:ring-0 cursor-pointer text-gray-700 h-5"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                   style={{ colorScheme: 'light' }}
                 />
               </div>
