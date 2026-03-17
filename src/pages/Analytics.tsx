@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, Link, useSearchParams, useLocation } from 'react-router-dom'
 import { apiClient } from '../api/axios'
-import type { LinkStatsResponse, ApiResponse } from '../types'
+import type { LinkStatsResponse, ApiResponse, UserLinkResponse, PageResponse } from '../types'
+import { useAuthStore } from '../store/useAuthStore'
+import { toast } from 'react-hot-toast'
 import {
   BarChart3,
   ChevronLeft,
@@ -16,7 +18,10 @@ import {
   Monitor,
   Tablet,
   TrendingUp,
-  Search
+  Search,
+  QrCode,
+  X,
+  Download
 } from 'lucide-react'
 import {
   XAxis,
@@ -36,10 +41,17 @@ export default function Analytics() {
   const [searchParams] = useSearchParams()
   const location = useLocation()
   const token = searchParams.get('token')
+  const { user } = useAuthStore()
+  
   const [stats, setStats] = useState<LinkStatsResponse | null>(null)
+  const [linkInfo, setLinkInfo] = useState<UserLinkResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
   const [dateRange, setDateRange] = useState<'30d' | 'all' | 'custom'>('30d')
+
+  // QR States
+  const [showQrModal, setShowQrModal] = useState(false)
+  const [isGeneratingQr, setIsGeneratingQr] = useState(false)
 
   // Initialize with local time format YYYY-MM-DDTHH:mm
   const now = new Date()
@@ -54,6 +66,7 @@ export default function Analytics() {
   const [endDate, setEndDate] = useState(formatForInput(now))
 
   const isPublicView = !location.pathname.startsWith('/dashboard')
+  const hasPrivilege = user?.role === 'ADMIN' || user?.vip
 
   const fetchAnalytics = useCallback(async () => {
     if (!shortCode) return
@@ -89,16 +102,47 @@ export default function Analytics() {
       } else {
         setError(data.message || 'Failed to load analytics data.')
       }
+
+      // If logged in, also try to fetch link info for QR etc.
+      if (user) {
+        try {
+          const { data: linkData } = await apiClient.get<ApiResponse<PageResponse<UserLinkResponse>>>('/me/links', {
+            params: { keyword: shortCode, size: 1 }
+          })
+          if (linkData.success && linkData.data.content.length > 0) {
+            setLinkInfo(linkData.data.content[0])
+          }
+        } catch (e) {
+          // Silent fail for link info
+        }
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || 'An error occurred while fetching analytics.')
     } finally {
       setIsLoading(false)
     }
-  }, [shortCode, token, dateRange, startDate, endDate])
+  }, [shortCode, token, dateRange, startDate, endDate, user])
 
   useEffect(() => {
     fetchAnalytics()
   }, [fetchAnalytics])
+
+  const handleGenerateQr = async () => {
+    if (!shortCode) return
+    setIsGeneratingQr(true)
+    try {
+      const { data } = await apiClient.post<ApiResponse<{ qrCode: string }>>(`/me/links/${shortCode}/qr-code`)
+      if (data.success) {
+        toast.success('QR Code created!')
+        if (linkInfo) setLinkInfo({ ...linkInfo, qrCode: data.data.qrCode })
+        else fetchAnalytics() // fallback reload
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to generate QR.')
+    } finally {
+      setIsGeneratingQr(false)
+    }
+  }
 
   const getTopItem = (data: Record<string, number>) => {
     if (!data || Object.keys(data).length === 0) return 'N/A'
@@ -176,6 +220,16 @@ export default function Analytics() {
 
         {/* Controls Area */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          {hasPrivilege && (
+            <button
+              onClick={() => setShowQrModal(true)}
+              className="inline-flex items-center justify-center gap-2 px-6 bg-orange-50 text-orange-600 hover:bg-orange-100 rounded-2xl transition-all font-bold border border-orange-100 shadow-sm h-14 group"
+            >
+              <QrCode className="w-4 h-4 group-hover:scale-110 transition-transform" />
+              QR Shortcut
+            </button>
+          )}
+          
           <Link
             to="/analytics"
             className="inline-flex items-center justify-center gap-2 px-6 bg-white text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-2xl transition-all font-bold border border-gray-200 hover:border-primary-100 shadow-sm h-14 group"
@@ -249,7 +303,6 @@ export default function Analytics() {
         </div>
       </div>
 
-      {/* Errors / Status Area */}
       {error && (
         <div className="bg-red-50 border border-red-100 rounded-2xl p-4 flex items-center gap-3 animate-in fade-in slide-in-from-top-4">
           <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center text-red-600 shrink-0">
@@ -275,7 +328,6 @@ export default function Analytics() {
         </div>
       )}
 
-      {/* Main Stats Area */}
       {isLoading && !stats ? (
         <div className="flex flex-col items-center justify-center py-24 bg-white rounded-[3rem] border border-gray-100 shadow-sm">
           <div className="relative w-20 h-20 mb-6">
@@ -298,7 +350,6 @@ export default function Analytics() {
         </div>
       ) : (
         <div className="space-y-8 animate-in fade-in duration-700">
-          {/* Overview Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full -mr-16 -mt-16 opacity-50 group-hover:scale-110 transition-transform" />
@@ -337,7 +388,6 @@ export default function Analytics() {
             </div>
           </div>
 
-          {/* Charts area */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 bg-white p-8 md:p-10 rounded-[3rem] border border-gray-100 shadow-sm min-h-[500px] flex flex-col">
               <div className="flex items-center justify-between mb-10">
@@ -412,15 +462,16 @@ export default function Analytics() {
             </div>
 
             <div className="space-y-8">
-              <div className="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm min-h-[300px] flex flex-col">
+              <div className="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm flex flex-col">
                 <h3 className="font-black text-gray-900 mb-8 flex items-center gap-3">
                   <Smartphone className="w-6 h-6 text-orange-500" />
                   Devices
                 </h3>
-                <div className="flex-1 flex items-center justify-center min-h-[250px]">
+                {/* Fixed height container for PieChart */}
+                <div className="w-full h-[300px] flex items-center justify-center relative">
                   {deviceData.length > 0 ? (
-                    <div className="w-full h-full min-h-[250px] relative flex flex-col pt-4">
-                      <div className="flex-1 min-h-[180px]">
+                    <div className="w-full h-full relative flex flex-col">
+                      <div className="flex-1 h-full min-h-[220px]">
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
@@ -492,6 +543,81 @@ export default function Analytics() {
                   )}
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* QR Modal */}
+      {showQrModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white rounded-[3rem] w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="p-8 border-b border-gray-100 flex items-center justify-between">
+              <div>
+                <h3 className="text-2xl font-black text-gray-900">QR Code Link</h3>
+                <p className="text-sm text-gray-400 font-medium">Quick identity for {shortCode}</p>
+              </div>
+              <button
+                onClick={() => setShowQrModal(false)}
+                className="p-3 bg-gray-50 text-gray-400 hover:text-gray-900 rounded-2xl transition-colors hover:bg-gray-100"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="p-10 flex flex-col items-center text-center">
+              {linkInfo?.qrCode ? (
+                <>
+                  <div className="p-6 bg-gray-50 rounded-[2.5rem] mb-8 border border-gray-100 shadow-inner group relative">
+                    <img
+                      src={linkInfo.qrCode}
+                      alt="QR Code"
+                      className="w-48 h-48 rounded-2xl mix-blend-multiply"
+                    />
+                    <div className="absolute inset-0 bg-primary-600/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-[2.5rem]" />
+                  </div>
+                  <div className="flex flex-col gap-3 w-full">
+                    <a
+                      href={linkInfo.qrCode}
+                      download={`qr-${shortCode}.png`}
+                      className="flex items-center justify-center gap-2 w-full py-4 bg-primary-600 text-white rounded-2xl font-black shadow-lg shadow-primary-100 hover:bg-primary-700 transition-all hover:-translate-y-1"
+                    >
+                      <Download className="w-5 h-5" />
+                      Download QR
+                    </a>
+                    <button
+                      onClick={() => setShowQrModal(false)}
+                      className="w-full py-4 bg-gray-50 text-gray-600 rounded-2xl font-bold hover:bg-gray-100 transition-colors"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="py-12 flex flex-col items-center">
+                  <div className="w-24 h-24 bg-orange-50 rounded-[2rem] flex items-center justify-center text-orange-400 mb-6 border border-orange-100">
+                    <QrCode className="w-12 h-12" />
+                  </div>
+                  <h4 className="text-xl font-bold text-gray-900 mb-2">No QR Code Yet</h4>
+                  <p className="text-gray-500 mb-8 max-w-xs mx-auto text-sm font-medium">
+                    You haven't generated a QR code for this link. Create one now to share offline!
+                  </p>
+                  <button
+                    onClick={handleGenerateQr}
+                    disabled={isGeneratingQr}
+                    className="flex items-center justify-center gap-2 px-10 py-4 bg-orange-500 text-white rounded-2xl font-black shadow-lg shadow-orange-100 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  >
+                    {isGeneratingQr ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <>
+                        <QrCode className="w-5 h-5" />
+                        Generate Now
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
