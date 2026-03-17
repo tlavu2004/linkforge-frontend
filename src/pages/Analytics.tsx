@@ -2,14 +2,14 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams, Link, useSearchParams, useLocation } from 'react-router-dom'
 import { apiClient } from '../api/axios'
 import type { LinkStatsResponse, ApiResponse } from '../types'
-import { 
-  BarChart3, 
-  ChevronLeft, 
-  MousePointerClick, 
-  Users, 
-  Globe, 
-  Smartphone, 
-  Loader2, 
+import {
+  BarChart3,
+  ChevronLeft,
+  MousePointerClick,
+  Users,
+  Globe,
+  Smartphone,
+  Loader2,
   AlertCircle,
   ExternalLink,
   Calendar,
@@ -40,20 +40,19 @@ export default function Analytics() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
   const [dateRange, setDateRange] = useState<'30d' | 'all' | 'custom'>('30d')
-  
+
   // Initialize with local time format YYYY-MM-DDTHH:mm
   const now = new Date()
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-  
+
   const formatForInput = (date: Date) => {
     const pad = (n: number) => n.toString().padStart(2, '0')
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
   }
+
 
   const [startDate, setStartDate] = useState(formatForInput(thirtyDaysAgo))
   const [endDate, setEndDate] = useState(formatForInput(now))
-
-
 
   const isPublicView = !location.pathname.startsWith('/dashboard')
 
@@ -63,14 +62,14 @@ export default function Analytics() {
     setError('')
     try {
       const params: any = { token }
-      
+
       if (dateRange === '30d') {
         const to = new Date().toISOString()
         const from = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
         params.from = from
         params.to = to
       } else if (dateRange === 'all') {
-        params.from = '2024-01-01T00:00:00Z' 
+        params.from = '2024-01-01T00:00:00Z'
         params.to = new Date().toISOString()
       } else {
         // Custom range validation
@@ -159,15 +158,15 @@ export default function Analytics() {
           <h2 className="text-xl font-bold text-red-800 mb-2">Oops! Something went wrong</h2>
           <p className="text-red-600 mb-6">{error || 'Could not load analytics for this link.'}</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-            <Link 
-              to={isPublicView ? "/" : "/dashboard"} 
+            <Link
+              to={isPublicView ? "/" : "/dashboard"}
               className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-red-200 text-red-700 rounded-xl font-semibold hover:bg-red-50 transition-colors w-full sm:w-auto justify-center"
             >
               <ChevronLeft className="w-5 h-5" />
               {isPublicView ? 'Back to Home' : 'Back to Dashboard'}
             </Link>
-            <Link 
-              to="/analytics" 
+            <Link
+              to="/analytics"
               className="inline-flex items-center gap-2 px-6 py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-colors shadow-lg shadow-red-200 w-full sm:w-auto justify-center"
             >
               <Search className="w-5 h-5" />
@@ -187,8 +186,8 @@ export default function Analytics() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Link 
-            to={isPublicView ? "/" : "/dashboard"} 
+          <Link
+            to={isPublicView ? "/" : "/dashboard"}
             className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-500"
             title={isPublicView ? "Back to Home" : "Back to Dashboard"}
           >
@@ -203,9 +202,9 @@ export default function Analytics() {
             </div>
             <p className="text-gray-500 text-sm flex items-center gap-2">
               Detailed tracking for your shortened link
-              <a 
-                href={`${window.location.origin}/r/${shortCode}`} 
-                target="_blank" 
+              <a
+                href={`${window.location.origin}/r/${shortCode}`}
+                target="_blank"
                 rel="noreferrer"
                 className="text-primary-600 hover:text-primary-700 flex items-center gap-1 font-medium"
               >
@@ -226,43 +225,62 @@ export default function Analytics() {
           </Link>
           <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3">
             {dateRange === 'custom' && (
-              <div className="flex items-center gap-2 bg-white p-1 rounded-2xl border border-gray-100 shadow-sm animate-in fade-in slide-in-from-right-2 h-[46px]">
-                <div className="flex flex-col px-2">
-                  <span className="text-[10px] text-gray-400 font-bold uppercase leading-none mb-0.5">From</span>
-                  <input 
-                    type="datetime-local" 
+              <div className="flex items-center gap-2 bg-white p-1 rounded-2xl border border-gray-100 shadow-sm animate-in fade-in slide-in-from-right-2 h-14">
+                <div
+                  className="flex flex-col px-3 cursor-pointer hover:bg-gray-50 rounded-xl transition-colors py-1"
+                  onClick={() => {
+                    const input = document.getElementById('analytics-start-date') as HTMLInputElement;
+                    try { input.showPicker(); } catch (e) { input.focus(); }
+                  }}
+                >
+                  <span className="text-[10px] text-gray-400 font-bold uppercase leading-none mb-1">Start Point</span>
+                  <input
+                    id="analytics-start-date"
+                    type="datetime-local"
+                    step="1"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="bg-transparent border-none p-0 text-xs font-bold focus:ring-0 cursor-pointer text-gray-700 h-4"
+                    className="bg-transparent border-none p-0 text-xs font-bold focus:ring-0 cursor-pointer text-gray-700 h-5"
+                    style={{ colorScheme: 'light' }}
                   />
                 </div>
-                <div className="w-px h-6 bg-gray-100" />
-                <div className="flex flex-col px-2">
-                  <span className="text-[10px] text-gray-400 font-bold uppercase leading-none mb-0.5">To</span>
-                  <input 
-                    type="datetime-local" 
+                <div className="w-px h-8 bg-gray-100" />
+                <div
+                  className="flex flex-col px-3 cursor-pointer hover:bg-gray-50 rounded-xl transition-colors py-1"
+                  onClick={() => {
+                    const input = document.getElementById('analytics-end-date') as HTMLInputElement;
+                    try { input.showPicker(); } catch (e) { input.focus(); }
+                  }}
+                >
+                  <span className="text-[10px] text-gray-400 font-bold uppercase leading-none mb-1">End Point</span>
+                  <input
+                    id="analytics-end-date"
+                    type="datetime-local"
+                    step="1"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="bg-transparent border-none p-0 text-xs font-bold focus:ring-0 cursor-pointer text-gray-700 h-4"
+                    className="bg-transparent border-none p-0 text-xs font-bold focus:ring-0 cursor-pointer text-gray-700 h-5"
+                    style={{ colorScheme: 'light' }}
                   />
                 </div>
               </div>
             )}
-            <div className="flex items-center gap-1 bg-white p-1 rounded-2xl border border-gray-100 shadow-sm h-[46px]">
+            <div className="flex items-center gap-1 bg-white p-1 rounded-2xl border border-gray-100 shadow-sm h-14">
 
-              <button 
+
+              <button
                 onClick={() => setDateRange('30d')}
                 className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${dateRange === '30d' ? 'bg-primary-600 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}
               >
                 Last 30 Days
               </button>
-              <button 
+              <button
                 onClick={() => setDateRange('all')}
                 className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${dateRange === 'all' ? 'bg-primary-600 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}
               >
                 All Time
               </button>
-              <button 
+              <button
                 onClick={() => setDateRange('custom')}
                 className={`px-4 py-2 h-full rounded-xl text-xs font-bold transition-all ${dateRange === 'custom' ? 'bg-primary-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
               >
@@ -325,158 +343,158 @@ export default function Analytics() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Time-series Chart */}
         <div className="lg:col-span-2 bg-white p-6 md:p-8 rounded-[2.5rem] border border-gray-100 shadow-sm min-h-[450px] flex flex-col">
-           <div className="flex items-center justify-between mb-8">
-             <div>
-               <h3 className="font-bold text-lg text-gray-900 flex items-center gap-2">
-                 <Calendar className="w-5 h-5 text-primary-500" />
-                 Click Performance
-               </h3>
-               <p className="text-xs text-gray-400 font-medium mt-1">Daily interaction trends</p>
-             </div>
-             <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 rounded-xl">
-                <TrendingUp className="w-4 h-4 text-green-600" />
-                <span className="text-xs font-bold text-green-700">Live</span>
-             </div>
-           </div>
-           
-           <div className="flex-1 w-full min-h-[300px]">
-              {chartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData}>
-                    <defs>
-                      <linearGradient id="colorClicks" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.1}/>
-                        <stop offset="95%" stopColor="#4f46e5" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                    <XAxis 
-                      dataKey="date" 
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fontSize: 10, fill: '#9ca3af', fontWeight: 500 }}
-                      dy={10}
-                    />
-                    <YAxis 
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fontSize: 10, fill: '#9ca3af', fontWeight: 500 }}
-                    />
-                    <Tooltip 
-                      contentStyle={{ 
-                        borderRadius: '16px', 
-                        border: 'none', 
-                        boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
-                        padding: '12px'
-                      }}
-                      itemStyle={{ color: '#4f46e5', fontWeight: 700 }}
-                      cursor={{ stroke: '#4f46e5', strokeWidth: 2, strokeDasharray: '4 4' }}
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="clicks" 
-                      stroke="#4f46e5" 
-                      strokeWidth={3}
-                      fillOpacity={1} 
-                      fill="url(#colorClicks)"
-                      animationDuration={1500}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-2">
-                  <BarChart3 className="w-8 h-8 opacity-20" />
-                  <p className="text-sm font-medium">No tracking data for this period</p>
-                </div>
-              )}
-           </div>
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h3 className="font-bold text-lg text-gray-900 flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-primary-500" />
+                Click Performance
+              </h3>
+              <p className="text-xs text-gray-400 font-medium mt-1">Daily interaction trends</p>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 rounded-xl">
+              <TrendingUp className="w-4 h-4 text-green-600" />
+              <span className="text-xs font-bold text-green-700">Live</span>
+            </div>
+          </div>
+
+          <div className="flex-1 w-full min-h-[300px]">
+            {chartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id="colorClicks" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.1} />
+                      <stop offset="95%" stopColor="#4f46e5" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                  <XAxis
+                    dataKey="date"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 10, fill: '#9ca3af', fontWeight: 500 }}
+                    dy={10}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 10, fill: '#9ca3af', fontWeight: 500 }}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: '16px',
+                      border: 'none',
+                      boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                      padding: '12px'
+                    }}
+                    itemStyle={{ color: '#4f46e5', fontWeight: 700 }}
+                    cursor={{ stroke: '#4f46e5', strokeWidth: 2, strokeDasharray: '4 4' }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="clicks"
+                    stroke="#4f46e5"
+                    strokeWidth={3}
+                    fillOpacity={1}
+                    fill="url(#colorClicks)"
+                    animationDuration={1500}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-2">
+                <BarChart3 className="w-8 h-8 opacity-20" />
+                <p className="text-sm font-medium">No tracking data for this period</p>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Side panels */}
         <div className="space-y-6">
-           {/* Device Breakdown */}
-           <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm min-h-[300px] flex flex-col">
-             <h3 className="font-bold text-gray-900 mb-6 flex items-center gap-2">
-               <Smartphone className="w-4 h-4 text-orange-500" />
-               Devices
-             </h3>
-             <div className="flex-1 flex items-center justify-center min-h-[250px]">
-                {deviceData.length > 0 ? (
-                  <div className="w-full h-full min-h-[250px] relative flex flex-col pt-4">
-                    <div className="flex-1 min-h-[180px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={deviceData}
-                            innerRadius={60}
-                            outerRadius={80}
-                            paddingAngle={5}
-                            dataKey="value"
-                            animationDuration={1000}
-                          >
-                            {deviceData.map((_, index) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <Tooltip 
-                             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                    {/* Legend */}
-                    <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 px-2">
-                       {deviceData.map((entry, index) => (
-                         <div key={entry.name} className="flex items-center justify-between text-[10px]">
-                            <div className="flex items-center gap-2 truncate">
-                               <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                               <span className="font-bold text-gray-600 capitalize truncate">{entry.name.toLowerCase()}</span>
-                            </div>
-                            <span className="font-black text-gray-900 ml-2">{entry.value}</span>
-                         </div>
-                       ))}
-                    </div>
+          {/* Device Breakdown */}
+          <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm min-h-[300px] flex flex-col">
+            <h3 className="font-bold text-gray-900 mb-6 flex items-center gap-2">
+              <Smartphone className="w-4 h-4 text-orange-500" />
+              Devices
+            </h3>
+            <div className="flex-1 flex items-center justify-center min-h-[250px]">
+              {deviceData.length > 0 ? (
+                <div className="w-full h-full min-h-[250px] relative flex flex-col pt-4">
+                  <div className="flex-1 min-h-[180px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={deviceData}
+                          innerRadius={60}
+                          outerRadius={80}
+                          paddingAngle={5}
+                          dataKey="value"
+                          animationDuration={1000}
+                        >
+                          {deviceData.map((_, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
                   </div>
-
-                ) : (
-                  <p className="text-xs text-gray-400 italic">No device data</p>
-                )}
-             </div>
-           </div>
-
-           {/* Referrer Breakdown */}
-           <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm min-h-[300px] flex flex-col">
-             <h3 className="font-bold text-gray-900 mb-6 flex items-center gap-2">
-               <Globe className="w-4 h-4 text-blue-500" />
-               Top Referrers
-             </h3>
-             <div className="flex-1 flex flex-col gap-4">
-                {referrerData.length > 0 ? (
-                  referrerData.map((ref, index) => {
-                    const total = Object.values(stats.clicksByReferrer).reduce((a, b) => a + b, 0)
-                    const percent = ((ref.value / total) * 100).toFixed(0)
-                    return (
-                      <div key={ref.name} className="space-y-1">
-                        <div className="flex justify-between text-[10px] font-bold">
-                          <span className="text-gray-700 truncate max-w-[150px]">{ref.name}</span>
-                          <span className="text-primary-600">{percent}%</span>
+                  {/* Legend */}
+                  <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 px-2">
+                    {deviceData.map((entry, index) => (
+                      <div key={entry.name} className="flex items-center justify-between text-[10px]">
+                        <div className="flex items-center gap-2 truncate">
+                          <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                          <span className="font-bold text-gray-600 capitalize truncate">{entry.name.toLowerCase()}</span>
                         </div>
-                        <div className="w-full h-1.5 bg-gray-50 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-primary-500 rounded-full" 
-                            style={{ width: `${percent}%`, transition: 'width 1s ease-out', transitionDelay: `${index * 100}ms` }} 
-                          />
-                        </div>
+                        <span className="font-black text-gray-900 ml-2">{entry.value}</span>
                       </div>
-                    )
-                  })
-                ) : (
-                  <div className="flex-1 flex items-center justify-center">
-                    <p className="text-xs text-gray-400 italic">No referrer data</p>
+                    ))}
                   </div>
-                )}
-             </div>
-           </div>
+                </div>
+
+              ) : (
+                <p className="text-xs text-gray-400 italic">No device data</p>
+              )}
+            </div>
+          </div>
+
+          {/* Referrer Breakdown */}
+          <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm min-h-[300px] flex flex-col">
+            <h3 className="font-bold text-gray-900 mb-6 flex items-center gap-2">
+              <Globe className="w-4 h-4 text-blue-500" />
+              Top Referrers
+            </h3>
+            <div className="flex-1 flex flex-col gap-4">
+              {referrerData.length > 0 ? (
+                referrerData.map((ref, index) => {
+                  const total = Object.values(stats.clicksByReferrer).reduce((a, b) => a + b, 0)
+                  const percent = ((ref.value / total) * 100).toFixed(0)
+                  return (
+                    <div key={ref.name} className="space-y-1">
+                      <div className="flex justify-between text-[10px] font-bold">
+                        <span className="text-gray-700 truncate max-w-[150px]">{ref.name}</span>
+                        <span className="text-primary-600">{percent}%</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-gray-50 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary-500 rounded-full"
+                          style={{ width: `${percent}%`, transition: 'width 1s ease-out', transitionDelay: `${index * 100}ms` }}
+                        />
+                      </div>
+                    </div>
+                  )
+                })
+              ) : (
+                <div className="flex-1 flex items-center justify-center">
+                  <p className="text-xs text-gray-400 italic">No referrer data</p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
