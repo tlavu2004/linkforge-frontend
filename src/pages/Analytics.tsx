@@ -39,7 +39,21 @@ export default function Analytics() {
   const [stats, setStats] = useState<LinkStatsResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
-  const [dateRange, setDateRange] = useState<'30d' | 'all'>('30d')
+  const [dateRange, setDateRange] = useState<'30d' | 'all' | 'custom'>('30d')
+  
+  // Initialize with local time format YYYY-MM-DDTHH:mm
+  const now = new Date()
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+  
+  const formatForInput = (date: Date) => {
+    const pad = (n: number) => n.toString().padStart(2, '0')
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+  }
+
+  const [startDate, setStartDate] = useState(formatForInput(thirtyDaysAgo))
+  const [endDate, setEndDate] = useState(formatForInput(now))
+
+
 
   const isPublicView = !location.pathname.startsWith('/dashboard')
 
@@ -55,12 +69,21 @@ export default function Analytics() {
         const from = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
         params.from = from
         params.to = to
-      } else {
-        // "All Time": backend defaults to 30 days if from is null, 
-        // so we send a very old date to get all data.
+      } else if (dateRange === 'all') {
         params.from = '2024-01-01T00:00:00Z' 
         params.to = new Date().toISOString()
+      } else {
+        // Custom range validation
+        if (new Date(startDate) > new Date(endDate)) {
+          setError('Start date must be before end date.')
+          setIsLoading(false)
+          return
+        }
+        params.from = new Date(startDate).toISOString()
+        params.to = new Date(endDate).toISOString()
       }
+
+
 
       const { data } = await apiClient.get<ApiResponse<LinkStatsResponse>>(`/analytics/${shortCode}`, {
         params
@@ -75,7 +98,8 @@ export default function Analytics() {
     } finally {
       setIsLoading(false)
     }
-  }, [shortCode, token, dateRange])
+  }, [shortCode, token, dateRange, startDate, endDate])
+
 
   useEffect(() => {
     fetchAnalytics()
@@ -200,21 +224,54 @@ export default function Analytics() {
             <Search className="w-4 h-4" />
             Try Another
           </Link>
-          <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm">
-             <button 
-              onClick={() => setDateRange('30d')}
-              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${dateRange === '30d' ? 'bg-primary-600 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}
-             >
-               Last 30 Days
-             </button>
-             <button 
-              onClick={() => setDateRange('all')}
-              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${dateRange === 'all' ? 'bg-primary-600 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}
-             >
-               All Time
-             </button>
+          <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3">
+            {dateRange === 'custom' && (
+              <div className="flex items-center gap-2 bg-white p-1 rounded-2xl border border-gray-100 shadow-sm animate-in fade-in slide-in-from-right-2 h-[46px]">
+                <div className="flex flex-col px-2">
+                  <span className="text-[10px] text-gray-400 font-bold uppercase leading-none mb-0.5">From</span>
+                  <input 
+                    type="datetime-local" 
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="bg-transparent border-none p-0 text-xs font-bold focus:ring-0 cursor-pointer text-gray-700 h-4"
+                  />
+                </div>
+                <div className="w-px h-6 bg-gray-100" />
+                <div className="flex flex-col px-2">
+                  <span className="text-[10px] text-gray-400 font-bold uppercase leading-none mb-0.5">To</span>
+                  <input 
+                    type="datetime-local" 
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="bg-transparent border-none p-0 text-xs font-bold focus:ring-0 cursor-pointer text-gray-700 h-4"
+                  />
+                </div>
+              </div>
+            )}
+            <div className="flex items-center gap-1 bg-white p-1 rounded-2xl border border-gray-100 shadow-sm h-[46px]">
+
+              <button 
+                onClick={() => setDateRange('30d')}
+                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${dateRange === '30d' ? 'bg-primary-600 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}
+              >
+                Last 30 Days
+              </button>
+              <button 
+                onClick={() => setDateRange('all')}
+                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${dateRange === 'all' ? 'bg-primary-600 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}
+              >
+                All Time
+              </button>
+              <button 
+                onClick={() => setDateRange('custom')}
+                className={`px-4 py-2 h-full rounded-xl text-xs font-bold transition-all ${dateRange === 'custom' ? 'bg-primary-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
+              >
+                Custom
+              </button>
+            </div>
           </div>
         </div>
+
       </div>
 
       {/* Overview Cards */}
@@ -343,41 +400,44 @@ export default function Analytics() {
                <Smartphone className="w-4 h-4 text-orange-500" />
                Devices
              </h3>
-             <div className="flex-1 flex items-center justify-center">
+             <div className="flex-1 flex items-center justify-center min-h-[250px]">
                 {deviceData.length > 0 ? (
-                  <div className="w-full h-[200px] relative">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={deviceData}
-                          innerRadius={60}
-                          outerRadius={80}
-                          paddingAngle={5}
-                          dataKey="value"
-                          animationDuration={1000}
-                        >
-                          {deviceData.map((_, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip 
-                           contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
+                  <div className="w-full h-full min-h-[250px] relative flex flex-col pt-4">
+                    <div className="flex-1 min-h-[180px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={deviceData}
+                            innerRadius={60}
+                            outerRadius={80}
+                            paddingAngle={5}
+                            dataKey="value"
+                            animationDuration={1000}
+                          >
+                            {deviceData.map((_, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip 
+                             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
                     {/* Legend */}
-                    <div className="mt-4 space-y-2">
+                    <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 px-2">
                        {deviceData.map((entry, index) => (
                          <div key={entry.name} className="flex items-center justify-between text-[10px]">
-                            <div className="flex items-center gap-2">
-                               <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                               <span className="font-medium text-gray-600 capitalize">{entry.name.toLowerCase()}</span>
+                            <div className="flex items-center gap-2 truncate">
+                               <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                               <span className="font-bold text-gray-600 capitalize truncate">{entry.name.toLowerCase()}</span>
                             </div>
-                            <span className="font-bold text-gray-900">{entry.value}</span>
+                            <span className="font-black text-gray-900 ml-2">{entry.value}</span>
                          </div>
                        ))}
                     </div>
                   </div>
+
                 ) : (
                   <p className="text-xs text-gray-400 italic">No device data</p>
                 )}
