@@ -454,6 +454,8 @@ export default function Analytics() {
                         tickLine={false}
                         tick={{ fontSize: 11, fill: '#64748b', fontWeight: 700 }}
                         dx={-5}
+                        domain={[0, 'dataMax + 1']}
+                        allowDecimals={false}
                       />
                       <Tooltip
                         contentStyle={{
