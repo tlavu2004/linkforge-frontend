@@ -223,19 +223,22 @@ export default function Analytics() {
           {hasPrivilege && (
             <button
               onClick={() => setShowQrModal(true)}
-              className="inline-flex items-center justify-center gap-2 px-6 bg-orange-50 text-orange-600 hover:bg-orange-100 rounded-2xl transition-all font-bold border border-orange-100 shadow-sm h-14 group"
+              className={`inline-flex items-center justify-center gap-2 ${dateRange === 'custom' ? 'px-4' : 'px-6'} bg-orange-50 text-orange-600 hover:bg-orange-100 rounded-2xl transition-all font-bold border border-orange-100 shadow-sm h-14 group`}
+              title="QR Shortcut"
             >
               <QrCode className="w-4 h-4 group-hover:scale-110 transition-transform" />
-              QR Shortcut
+              {dateRange !== 'custom' && <span>QR Shortcut</span>}
             </button>
           )}
           
+          
           <Link
             to="/analytics"
-            className="inline-flex items-center justify-center gap-2 px-6 bg-white text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-2xl transition-all font-bold border border-gray-200 hover:border-primary-100 shadow-sm h-14 group"
+            className={`inline-flex items-center justify-center gap-2 ${dateRange === 'custom' ? 'px-4' : 'px-6'} bg-white text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-2xl transition-all font-bold border border-gray-200 hover:border-primary-100 shadow-sm h-14 group`}
+            title="Try Another"
           >
             <Search className="w-4 h-4 group-hover:scale-110 transition-transform" />
-            Try Another
+            {dateRange !== 'custom' && <span>Try Another</span>}
           </Link>
 
           {dateRange === 'custom' && (
@@ -570,15 +573,17 @@ export default function Analytics() {
                 <>
                   <div className="p-6 bg-gray-50 rounded-[2.5rem] mb-8 border border-gray-100 shadow-inner group relative">
                     <img
-                      src={linkInfo.qrCode}
+                      src={`data:image/png;base64,${linkInfo.qrCode}`}
                       alt="QR Code"
                       className="w-48 h-48 rounded-2xl mix-blend-multiply"
                     />
+
                     <div className="absolute inset-0 bg-primary-600/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-[2.5rem]" />
                   </div>
                   <div className="flex flex-col gap-3 w-full">
                     <a
-                      href={linkInfo.qrCode}
+                      href={`data:image/png;base64,${linkInfo.qrCode}`}
+
                       download={`qr-${shortCode}.png`}
                       className="flex items-center justify-center gap-2 w-full py-4 bg-primary-600 text-white rounded-2xl font-black shadow-lg shadow-primary-100 hover:bg-primary-700 transition-all hover:-translate-y-1"
                     >
