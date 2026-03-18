@@ -66,11 +66,16 @@ export default function Dashboard() {
         }
       })
       if (data.success) {
-        setLinks(data.data.content)
-        // Fallback for snake_case naming if backend uses it
         const d = data.data as any;
-        setTotalPages(d.totalPages ?? d.total_pages ?? 0)
-        setTotalElements(d.totalElements ?? d.total_elements ?? 0)
+        const fetchedLinks = d.content || [];
+        setLinks(fetchedLinks)
+        
+        // Very robust fallback for pagination metadata
+        const totalElems = d.totalElements ?? d.total_elements ?? d.totalCount ?? d.total_count ?? d.total ?? (fetchedLinks.length || 0);
+        const totalPgs = d.totalPages ?? d.total_pages ?? d.page_count ?? (totalElems > 0 ? Math.ceil(totalElems / size) : 0);
+        
+        setTotalElements(totalElems)
+        setTotalPages(totalPgs)
       }
     } catch {
       // silently fail — will show empty state
@@ -741,7 +746,7 @@ export default function Dashboard() {
             <div className="space-y-2">
               <h3 className="text-xl font-bold text-gray-900">Delete this link?</h3>
               <p className="text-gray-500 text-sm">
-                This action cannot be undone. All analytics data for this link will also be lost.
+                This action cannot be undone. All analytics data for this link will also be lost forever.
               </p>
             </div>
 
@@ -754,13 +759,15 @@ export default function Dashboard() {
                     setLinkToDelete(null);
                   }
                 }}
-                className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
+                disabled={!!deletingCode}
+                className="w-full py-3 bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-white rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
               >
-                <Trash2 className="w-5 h-5" />
-                Yes, Delete Link
+                {deletingCode ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />}
+                Confirm Delete
               </button>
               <button
                 onClick={() => { setShowLinkDeleteConfirm(false); setLinkToDelete(null); }}
+                disabled={!!deletingCode}
                 className="w-full py-3 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl font-semibold transition-all"
               >
                 Cancel
