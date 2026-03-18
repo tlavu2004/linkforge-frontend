@@ -37,7 +37,9 @@ export default function Dashboard() {
   const [selectedLinkForQr, setSelectedLinkForQr] = useState<UserLinkResponse | null>(null)
   const [isGeneratingQr, setIsGeneratingQr] = useState(false)
   const [isDeletingQr, setIsDeletingQr] = useState(false)
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showQrDeleteConfirm, setShowQrDeleteConfirm] = useState(false)
+  const [showLinkDeleteConfirm, setShowLinkDeleteConfirm] = useState(false)
+  const [linkToDelete, setLinkToDelete] = useState<string | null>(null)
   const [qrCodeToRemove, setQrCodeToRemove] = useState<string | null>(null)
 
   // Debounce search keyword
@@ -64,9 +66,16 @@ export default function Dashboard() {
         }
       })
       if (data.success) {
-        setLinks(data.data.content)
-        setTotalPages(data.data.totalPages)
-        setTotalElements(data.data.totalElements)
+        const d = data.data as any;
+        const fetchedLinks = d.content || [];
+        setLinks(fetchedLinks)
+        
+        // Very robust fallback for pagination metadata
+        const totalElems = d.totalElements ?? d.total_elements ?? d.totalCount ?? d.total_count ?? d.total ?? (fetchedLinks.length || 0);
+        const totalPgs = d.totalPages ?? d.total_pages ?? d.page_count ?? (totalElems > 0 ? Math.ceil(totalElems / size) : 0);
+        
+        setTotalElements(totalElems)
+        setTotalPages(totalPgs)
       }
     } catch {
       // silently fail — will show empty state
@@ -166,7 +175,12 @@ export default function Dashboard() {
 
   const triggerDeleteQrConfirm = (shortCode: string) => {
     setQrCodeToRemove(shortCode)
-    setShowDeleteConfirm(true)
+    setShowQrDeleteConfirm(true)
+  }
+
+  const triggerDeleteLinkConfirm = (shortCode: string) => {
+    setLinkToDelete(shortCode)
+    setShowLinkDeleteConfirm(true)
   }
 
   const handleDeleteQr = async () => {
@@ -185,7 +199,7 @@ export default function Dashboard() {
         if (recentLink?.shortCode === shortCode) {
           setRecentLink({ ...recentLink, qrCode: undefined } as any)
         }
-        setShowDeleteConfirm(false)
+        setShowQrDeleteConfirm(false)
         setQrCodeToRemove(null)
       }
     } catch (err: any) {
@@ -270,17 +284,22 @@ export default function Dashboard() {
 
               {/* Custom Alias Field */}
               <div className="w-full md:w-auto flex items-center border-t md:border-t-0 border-gray-100 md:border-l md:border-l-gray-200 group transition-colors hover:bg-gray-50/50 relative">
-                <input
-                  type="text"
-                  value={customAlias}
-                  onChange={(e) => setCustomAlias(e.target.value.trim())}
-                  placeholder="Custom alias (optional)"
-                  className="w-full bg-transparent outline-none text-gray-900 placeholder:text-gray-400 font-medium text-sm md:text-base px-4 py-3 md:py-4 min-w-[150px] md:min-w-[180px]"
-                  disabled={isLoading}
-                />
+                  <input
+                    type="text"
+                    value={customAlias}
+                    onChange={(e) => setCustomAlias(e.target.value.substring(0, 50).trim())}
+                    placeholder="Custom alias (optional)"
+                    className="w-full bg-transparent outline-none text-gray-900 placeholder:text-gray-400 font-medium text-sm md:text-base px-4 py-3 md:py-4 min-w-[150px] md:min-w-[180px] pr-10"
+                    disabled={isLoading}
+                  />
+                  {customAlias.length > 0 && (
+                    <span className="absolute right-3 text-[10px] font-bold text-gray-400 pointer-events-none">
+                      {customAlias.length}/50
+                    </span>
+                  )}
               </div>
 
-              {(user?.vip || user?.role === 'ADMIN') && (
+              {user && (
                 <div
                   className="w-full md:w-auto flex items-center border-t md:border-t-0 border-gray-100 md:border-l md:border-l-gray-200 group transition-colors hover:bg-gray-50/50 cursor-pointer select-none relative"
                   onClick={(e) => {
@@ -407,7 +426,9 @@ export default function Dashboard() {
                 <LayoutDashboard className="w-5 h-5 text-primary-500" />
                 My Links
               </h3>
-              <p className="text-sm text-gray-500 mt-1">{totalElements} link{totalElements !== 1 ? 's' : ''} total</p>
+              <p className="text-sm text-gray-500 mt-1">
+                <span className="font-bold text-gray-900">{totalElements || 0}</span> link{totalElements !== 1 ? 's' : ''} total
+              </p>
             </div>
 
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto flex-1 justify-end">
@@ -509,7 +530,7 @@ export default function Dashboard() {
                           <QrCode className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDeleteLink(link.shortCode)}
+                          onClick={() => triggerDeleteLinkConfirm(link.shortCode)}
                           disabled={deletingCode === link.shortCode}
                           className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
                           title="Delete link"
@@ -680,7 +701,7 @@ export default function Dashboard() {
       )}
 
       {/* Delete QR Confirmation Modal */}
-      {showDeleteConfirm && (
+      {showQrDeleteConfirm && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-6 text-center space-y-6">
             <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto text-red-600">
@@ -703,8 +724,50 @@ export default function Dashboard() {
                 {isDeletingQr ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Yes, Delete QR Code'}
               </button>
               <button
-                onClick={() => { setShowDeleteConfirm(false); setQrCodeToRemove(null); }}
+                onClick={() => { setShowQrDeleteConfirm(false); setQrCodeToRemove(null); }}
                 disabled={isDeletingQr}
+                className="w-full py-3 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl font-semibold transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Link Confirmation Modal */}
+      {showLinkDeleteConfirm && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-6 text-center space-y-6 animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto text-red-600">
+              <Trash2 className="w-8 h-8" />
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-xl font-bold text-gray-900">Delete this link?</h3>
+              <p className="text-gray-500 text-sm">
+                This action cannot be undone. All analytics data for this link will also be lost forever.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-2 pt-2">
+              <button
+                onClick={async () => {
+                  if (linkToDelete) {
+                    await handleDeleteLink(linkToDelete);
+                    setShowLinkDeleteConfirm(false);
+                    setLinkToDelete(null);
+                  }
+                }}
+                disabled={!!deletingCode}
+                className="w-full py-3 bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-white rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
+              >
+                {deletingCode ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />}
+                Confirm Delete
+              </button>
+              <button
+                onClick={() => { setShowLinkDeleteConfirm(false); setLinkToDelete(null); }}
+                disabled={!!deletingCode}
                 className="w-full py-3 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl font-semibold transition-all"
               >
                 Cancel
