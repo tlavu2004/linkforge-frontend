@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
+import { useTranslation } from 'react-i18next'
 import { apiClient } from '../api/axios'
 import type { ApiResponse, RegisterResponse } from '../types'
 import { Mail, Lock, AlertCircle, Loader2, User } from 'lucide-react'
 
 export default function Register() {
+  const { t } = useTranslation()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -18,7 +20,7 @@ export default function Register() {
     e.preventDefault()
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match')
+      setError(t('register.error_password_match'))
       return
     }
 
@@ -33,18 +35,16 @@ export default function Register() {
       })
 
       if (data.success) {
-        // Redirect to email verification page
-        toast.success('Registration successful! Please check your email for verification code.')
+        toast.success(t('register.success_msg'))
         navigate(`/verify-email?email=${encodeURIComponent(email)}`)
       } else {
-        setError(data.message || 'Registration failed')
-        toast.error(data.message || 'Registration failed')
+        setError(data.message || t('common.error'))
+        toast.error(data.message || t('common.error'))
       }
     } catch (err: any) {
-      setError(
-        err.response?.data?.message || 'An error occurred during registration. Please try again.'
-      )
-      toast.error('Registration failed')
+      const message = err.response?.data?.message || t('common.error')
+      setError(message)
+      toast.error(t('common.error'))
     } finally {
       setIsLoading(false)
     }
@@ -53,8 +53,8 @@ export default function Register() {
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2">
-        <h1 className="text-2xl font-bold text-gray-900">Create an account</h1>
-        <p className="text-gray-500 text-sm">Join LinkForge to manage your shortened URLs.</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('register.title')}</h1>
+        <p className="text-gray-500 text-sm">{t('register.subtitle')}</p>
       </div>
 
       {error && (
@@ -66,7 +66,7 @@ export default function Register() {
 
       <form onSubmit={handleRegister} className="space-y-4">
         <div className="space-y-1">
-          <label className="text-sm font-medium text-gray-700 block">Full Name</label>
+          <label className="text-sm font-medium text-gray-700 block">{t('register.username')}</label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <User className="h-5 w-5 text-gray-400" />
@@ -84,7 +84,7 @@ export default function Register() {
         </div>
 
         <div className="space-y-1">
-          <label className="text-sm font-medium text-gray-700 block">Email</label>
+          <label className="text-sm font-medium text-gray-700 block">{t('register.email')}</label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Mail className="h-5 w-5 text-gray-400" />
@@ -101,7 +101,7 @@ export default function Register() {
         </div>
 
         <div className="space-y-1">
-          <label className="text-sm font-medium text-gray-700 block">Password</label>
+          <label className="text-sm font-medium text-gray-700 block">{t('register.password')}</label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Lock className="h-5 w-5 text-gray-400" />
@@ -119,7 +119,7 @@ export default function Register() {
         </div>
 
         <div className="space-y-1">
-          <label className="text-sm font-medium text-gray-700 block">Confirm Password</label>
+          <label className="text-sm font-medium text-gray-700 block">{t('login.confirm_password', { defaultValue: 'Confirm Password' })}</label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Lock className="h-5 w-5 text-gray-400" />
@@ -144,18 +144,18 @@ export default function Register() {
           {isLoading ? (
             <>
               <Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" />
-              Creating account...
+              {t('register.creating')}
             </>
           ) : (
-            'Sign up'
+            t('register.submit')
           )}
         </button>
       </form>
 
       <p className="text-center text-sm text-gray-600">
-        Already have an account?{' '}
+        {t('register.has_account')}{' '}
         <Link to="/login" className="font-semibold text-primary-600 hover:text-primary-500 transition-colors">
-          Sign in
+          {t('register.login')}
         </Link>
       </p>
     </div>
