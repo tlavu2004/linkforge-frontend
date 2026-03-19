@@ -278,7 +278,7 @@ export default function Dashboard() {
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   placeholder={t('home.placeholder')}
-                  className="w-full bg-transparent outline-none text-gray-900 placeholder:text-gray-400 font-medium text-base md:text-lg pl-4 md:pl-14 pr-4 py-3 md:py-4"
+                  className="w-full bg-transparent outline-none text-gray-900 placeholder:text-gray-400 font-medium text-sm md:text-base pl-4 md:pl-14 pr-4 py-3 md:py-4"
                   required
                   disabled={isLoading}
                 />
@@ -315,7 +315,7 @@ export default function Dashboard() {
                   }}
                 >
                   <div className="flex items-center pl-4 md:pl-5 pr-3 md:pr-4 py-3 md:py-4 w-full justify-between gap-3 min-w-[210px] md:min-w-[250px]">
-                    <span className={`text-sm font-medium whitespace-nowrap ${expiresAt ? 'text-gray-900' : 'text-gray-400'}`}>
+                    <span className={`text-sm md:text-base font-medium whitespace-nowrap ${expiresAt ? 'text-gray-900' : 'text-gray-400'}`}>
                       {expiresAt
                         ? new Date(expiresAt).toLocaleString(i18n.language === 'en' ? 'en-US' : 'vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
                         : 'dd/mm/yyyy hh:mm:ss'}
@@ -353,7 +353,7 @@ export default function Dashboard() {
               <button
                 type="submit"
                 disabled={isLoading || !url}
-                className="w-full md:w-auto bg-primary-600 hover:bg-primary-700 disabled:bg-primary-300 disabled:cursor-not-allowed text-white px-8 py-3 md:py-4 rounded-xl md:rounded-full font-semibold transition-all shadow-md hover:shadow-lg flex justify-center items-center h-full"
+                className="w-full md:w-auto bg-primary-600 hover:bg-primary-700 disabled:bg-primary-300 disabled:cursor-not-allowed text-white px-8 py-3 md:py-4 rounded-xl md:rounded-full font-semibold text-sm md:text-base transition-all shadow-md hover:shadow-lg flex justify-center items-center h-full"
               >
                 {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : t('dashboard.shorten_btn')}
               </button>

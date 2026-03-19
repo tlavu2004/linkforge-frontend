@@ -97,7 +97,7 @@ export default function Home() {
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   placeholder={t('home.placeholder')}
-                  className="w-full bg-transparent outline-none text-gray-900 placeholder:text-gray-400 font-medium text-base"
+                  className="w-full bg-transparent outline-none text-gray-900 placeholder:text-gray-400 font-medium text-sm md:text-base"
                   required
                   disabled={isLoading}
                 />
@@ -106,7 +106,7 @@ export default function Home() {
               <button
                 type="submit"
                 disabled={isLoading || !url}
-                className="w-full md:w-auto bg-primary-600 hover:bg-primary-700 disabled:bg-primary-300 disabled:cursor-not-allowed text-white px-8 py-3 md:py-3.5 rounded-xl md:rounded-full font-semibold transition-all shadow-md hover:shadow-lg flex justify-center items-center h-full min-w-[140px]"
+                className="w-full md:w-auto bg-primary-600 hover:bg-primary-700 disabled:bg-primary-300 disabled:cursor-not-allowed text-white px-8 py-3 md:py-3.5 rounded-xl md:rounded-full font-semibold text-sm md:text-base transition-all shadow-md hover:shadow-lg flex justify-center items-center h-full min-w-[140px]"
               >
                 {isLoading ? (
                   <span className="flex items-center">
