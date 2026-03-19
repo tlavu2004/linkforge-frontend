@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
+import { useTranslation } from 'react-i18next'
 import { apiClient } from '../api/axios'
 import type { ShortLinkResponse, ApiResponse } from '../types'
 import { Copy, Check, Link as LinkIcon, AlertCircle, LayoutDashboard, BarChart3 } from 'lucide-react'
 import { useAuthStore } from '../store/useAuthStore'
 
 export default function Home() {
+  const { t } = useTranslation()
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
 
   const [url, setUrl] = useState('')
@@ -33,14 +35,15 @@ export default function Home() {
       if (data.success) {
         setResult(data.data)
         setUrl('')
-        toast.success('Link shortened successfully!')
+        toast.success(t('home.success_msg'))
       } else {
-        setError(data.message || 'Failed to create short link.')
-        toast.error(data.message || 'Failed to create short link.')
+        setError(data.message || t('home.error_default'))
+        toast.error(data.message || t('home.error_default'))
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'An error occurred. Please try again later.')
-      toast.error(err.response?.data?.message || 'An error occurred.')
+      const errMsg = err.response?.data?.message || t('home.error_default')
+      setError(errMsg)
+      toast.error(errMsg)
     } finally {
       setIsLoading(false)
     }
@@ -48,7 +51,7 @@ export default function Home() {
 
   const copyToClipboard = (text: string, type: 'url' | 'token') => {
     navigator.clipboard.writeText(text)
-    toast.success('Copied to clipboard!')
+    toast.success(t('home.copied'))
     if (type === 'url') {
       setCopiedUrl(true)
       setTimeout(() => setCopiedUrl(false), 2000)
@@ -63,13 +66,13 @@ export default function Home() {
       <div className="max-w-3xl mx-auto w-full text-center space-y-6">
         <div className="space-y-4">
           <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-gray-900 text-balance leading-tight">
-            Shorten Your Links <br className="hidden sm:block" />
+            {t('home.title')} <br className="hidden sm:block" />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-indigo-600">
-              Expand Your Reach
+              {t('home.title_highlight')}
             </span>
           </h1>
           <p className="text-base md:text-lg text-gray-500 text-balance max-w-xl mx-auto">
-            LinkForge helps you create, track, and manage your links effortlessly with power and security.
+            {t('home.subtitle')}
           </p>
         </div>
 
@@ -80,9 +83,9 @@ export default function Home() {
               className="bg-primary-600 hover:bg-primary-700 text-white px-10 py-5 rounded-full font-bold text-xl transition-all shadow-xl hover:shadow-indigo-500/20 flex items-center justify-center gap-3 w-full md:w-auto"
             >
               <LayoutDashboard className="w-6 h-6" />
-              Go to Dashboard
+              {t('home.go_to_dashboard')}
             </Link>
-            <p className="mt-6 text-gray-500 text-sm">You are already logged in to LinkForge.</p>
+            <p className="mt-6 text-gray-500 text-sm">{t('home.already_logged_in')}</p>
           </div>
         ) : (
           <>
@@ -93,8 +96,8 @@ export default function Home() {
                   type="url"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
-                  placeholder="Paste your long URL here..."
-                  className="w-full bg-transparent outline-none text-gray-900 placeholder:text-gray-400 font-medium text-base"
+                  placeholder={t('home.placeholder')}
+                  className="w-full bg-transparent outline-none text-gray-900 placeholder:text-gray-400 font-medium text-sm md:text-base"
                   required
                   disabled={isLoading}
                 />
@@ -103,7 +106,7 @@ export default function Home() {
               <button
                 type="submit"
                 disabled={isLoading || !url}
-                className="w-full md:w-auto bg-primary-600 hover:bg-primary-700 disabled:bg-primary-300 disabled:cursor-not-allowed text-white px-8 py-3 md:py-3.5 rounded-xl md:rounded-full font-semibold transition-all shadow-md hover:shadow-lg flex justify-center items-center h-full min-w-[140px]"
+                className="w-full md:w-auto bg-primary-600 hover:bg-primary-700 disabled:bg-primary-300 disabled:cursor-not-allowed text-white px-8 py-3 md:py-3.5 rounded-xl md:rounded-full font-semibold text-sm md:text-base transition-all shadow-md hover:shadow-lg flex justify-center items-center h-full min-w-[140px]"
               >
                 {isLoading ? (
                   <span className="flex items-center">
@@ -111,9 +114,9 @@ export default function Home() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Processing...
+                    {t('home.processing')}
                   </span>
-                ) : 'Shorten Now'}
+                ) : t('home.shorten_btn')}
               </button>
             </form>
 
@@ -128,7 +131,7 @@ export default function Home() {
               <div className="max-w-2xl mx-auto bg-white border border-gray-100 shadow-xl rounded-2xl p-6 md:p-8 space-y-6 animate-in zoom-in-95 duration-300">
                 <div className="space-y-4">
                   <div className="text-left">
-                    <p className="text-sm text-gray-500 font-medium mb-1">Your shortened link</p>
+                    <p className="text-sm text-gray-500 font-medium mb-1">{t('home.result_title')}</p>
                     <div className="flex items-center gap-3">
                       <div className="flex-1 bg-gray-50 text-gray-900 border border-gray-200 rounded-xl px-4 py-3 font-medium truncate text-lg">
                         {window.location.origin}/r/{result.shortCode}
@@ -137,14 +140,14 @@ export default function Home() {
                         <button
                           onClick={() => copyToClipboard(`${window.location.origin}/r/${result.shortCode}`, 'url')}
                           className="shrink-0 p-3 bg-primary-50 text-primary-600 hover:bg-primary-100 rounded-xl transition flex items-center justify-center w-12 h-12"
-                          title="Copy short link"
+                          title={t('home.copied')}
                         >
                           {copiedUrl ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5" />}
                         </button>
                         <Link
                           to={`/analytics/${result.shortCode}${result.deleteToken ? `?token=${result.deleteToken}` : ''}`}
                           className="shrink-0 p-3 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-xl transition flex items-center justify-center w-12 h-12"
-                          title="View Analytics"
+                          title={t('common.view_analytics', { defaultValue: 'View Analytics' })}
                         >
                           <BarChart3 className="w-5 h-5" />
                         </Link>
@@ -155,7 +158,7 @@ export default function Home() {
                   {result.deleteToken && (
                     <div className="text-left pt-2 border-t border-gray-100">
                       <div className="flex items-center justify-between mb-1">
-                        <p className="text-sm text-amber-600 font-medium">Delete Token (Save this!)</p>
+                        <p className="text-sm text-amber-600 font-medium">{t('home.delete_token_title')}</p>
                       </div>
                       <div className="flex items-center gap-3">
                         <div className="flex-1 bg-amber-50 text-amber-900 border border-amber-200/50 rounded-xl px-4 py-3 font-mono text-sm truncate">
@@ -164,14 +167,16 @@ export default function Home() {
                         <button
                           onClick={() => copyToClipboard(result.deleteToken!, 'token')}
                           className="shrink-0 p-3 bg-amber-100 text-amber-700 hover:bg-amber-200 rounded-xl transition flex items-center justify-center w-12 h-12"
-                          title="Copy delete token"
+                          title={t('home.copied')}
                         >
                           {copiedToken ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5" />}
                         </button>
                       </div>
                       <p className="text-xs text-gray-500 mt-2">
-                        Since you created this link as a guest, you must save this token if you ever wish to{' '}
-                        <a href="/delete" className="text-primary-600 underline hover:text-primary-700 font-medium">delete the link</a>.
+                        {t('home.guest_warning')}{' '}
+                        <Link to="/delete" className="text-primary-600 underline hover:text-primary-700 font-medium">
+                          {t('home.delete_link_text')}
+                        </Link>.
                       </p>
                     </div>
                   )}
@@ -179,7 +184,7 @@ export default function Home() {
 
                 <div className="bg-blue-50/50 rounded-xl p-4 text-left border border-blue-100">
                   <p className="text-sm text-blue-800">
-                    <span className="font-semibold flex items-center"><LinkIcon className="inline w-4 h-4 mr-1" />Original:</span>
+                    <span className="font-semibold flex items-center"><LinkIcon className="inline w-4 h-4 mr-1" />{t('home.original_label')}</span>
                     <a href={result.originalUrl} target="_blank" rel="noreferrer" className="underline truncate block max-w-full mt-1 hover:text-primary-600 transition">
                       {result.originalUrl}
                     </a>

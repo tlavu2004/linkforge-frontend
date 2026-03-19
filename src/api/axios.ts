@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { useAuthStore } from '../store/useAuthStore'
+import i18n from '../i18n'
 
 const baseURL = import.meta.env.VITE_API_URL
   ? `${import.meta.env.VITE_API_URL}/api/v1`
@@ -18,6 +19,11 @@ apiClient.interceptors.request.use(
     if (user?.accessToken && config.headers) {
       config.headers.Authorization = `Bearer ${user.accessToken}`
     }
+    
+    if (config.headers) {
+      config.headers['Accept-Language'] = i18n.language || 'en'
+    }
+    
     return config
   },
   (error) => Promise.reject(error)

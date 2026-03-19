@@ -4,8 +4,10 @@ import type { ApiResponse, PageResponse, AdminUserResponse } from '../types'
 import { useAuthStore } from '../store/useAuthStore'
 import { Search, ChevronLeft, ChevronRight, Loader2, AlertCircle, LayoutDashboard } from 'lucide-react'
 import { Navigate, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 export default function AdminDashboard() {
+  const { t, i18n } = useTranslation()
   const { user } = useAuthStore()
   const navigate = useNavigate()
   const [users, setUsers] = useState<AdminUserResponse[]>([])
@@ -33,14 +35,14 @@ export default function AdminDashboard() {
         setUsers(data.data.content)
         setTotalPages(data.data.totalPages)
       } else {
-        setError(data.message || 'Failed to fetch users')
+        setError(data.message || t('admin.errors.fetch_failed'))
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'An error occurred while fetching users')
+      setError(err.response?.data?.message || t('admin.errors.fetch_error'))
     } finally {
       setIsLoading(false)
     }
-  }, [search, page])
+  }, [search, page, t])
 
   useEffect(() => {
     if (user && user.role === 'ADMIN') {
@@ -80,10 +82,10 @@ export default function AdminDashboard() {
           : u
         ))
       } else {
-        setError(data.message || 'Failed to toggle VIP status.')
+        setError(data.message || t('admin.errors.toggle_vip_failed'))
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'An error occurred while toggling VIP status.')
+      setError(err.response?.data?.message || t('admin.errors.toggle_vip_error'))
     } finally {
       setTogglingVipFor(null)
     }
@@ -95,7 +97,7 @@ export default function AdminDashboard() {
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return '-'
-    return new Date(dateString).toLocaleDateString()
+    return new Date(dateString).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'vi-VN')
   }
 
   return (
@@ -111,9 +113,9 @@ export default function AdminDashboard() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
               <LayoutDashboard className="w-6 h-6 text-primary-500" />
-              Manage Users
+              {t('admin.title')}
             </h1>
-            <p className="text-sm text-gray-500 mt-1">View and manage system users and VIP access</p>
+            <p className="text-sm text-gray-500 mt-1">{t('admin.subtitle')}</p>
           </div>
 
           <div className="relative w-full md:w-80">
@@ -124,7 +126,7 @@ export default function AdminDashboard() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by name or email..."
+              placeholder={t('admin.search_placeholder')}
               className="w-full bg-gray-50 text-gray-900 placeholder:text-gray-400 rounded-xl pl-10 pr-4 py-3 border border-gray-200 outline-none focus:bg-white focus:border-primary-500 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all font-medium text-sm"
             />
           </div>
@@ -145,12 +147,12 @@ export default function AdminDashboard() {
             <table className="w-full text-left text-sm whitespace-nowrap">
               <thead className="bg-gray-50 text-gray-500 text-xs font-semibold tracking-wider uppercase border-b border-gray-100">
                 <tr>
-                  <th className="px-6 py-4">ID</th>
-                  <th className="px-6 py-4">Username</th>
-                  <th className="px-6 py-4">Email</th>
-                  <th className="px-6 py-4">Role</th>
-                  <th className="px-6 py-4">VIP Access</th>
-                  <th className="px-6 py-4">Expiration</th>
+                  <th className="px-6 py-4">{t('admin.table.id')}</th>
+                  <th className="px-6 py-4">{t('admin.table.username')}</th>
+                  <th className="px-6 py-4">{t('admin.table.email')}</th>
+                  <th className="px-6 py-4">{t('admin.table.role')}</th>
+                  <th className="px-6 py-4">{t('admin.table.vip_access')}</th>
+                  <th className="px-6 py-4">{t('admin.table.expiration')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 text-gray-700">
@@ -159,14 +161,14 @@ export default function AdminDashboard() {
                     <td colSpan={6} className="px-6 py-12 text-center">
                       <div className="flex flex-col items-center justify-center text-gray-500">
                         <Loader2 className="h-8 w-8 animate-spin mb-4 text-primary-500" />
-                        <span className="font-medium">Loading users...</span>
+                        <span className="font-medium">{t('admin.loading_users')}</span>
                       </div>
                     </td>
                   </tr>
                 ) : users.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-6 py-12 text-center text-gray-500 font-medium tracking-wide">
-                      No users found.
+                      {t('admin.no_users')}
                     </td>
                   </tr>
                 ) : (
@@ -222,7 +224,7 @@ export default function AdminDashboard() {
         {!isLoading && totalPages > 1 && (
           <div className="flex items-center justify-between mt-6 px-2">
             <span className="text-sm text-gray-500 font-medium">
-              Showing page <span className="text-gray-900">{page + 1}</span> of <span className="text-gray-900">{totalPages}</span>
+              {t('admin.pagination.showing', { current: page + 1, total: totalPages })}
             </span>
             <div className="flex items-center space-x-2">
               <button

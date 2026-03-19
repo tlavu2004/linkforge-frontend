@@ -3,9 +3,12 @@ import { useAuthStore } from '../store/useAuthStore'
 import { apiClient } from '../api/axios'
 import { Toaster } from 'react-hot-toast'
 import { LayoutDashboard, LogOut, ShieldCheck, Star } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import LanguageSwitcher from '../components/LanguageSwitcher'
 
 export default function DashboardLayout() {
   const { isAuthenticated, user, clearAuth } = useAuthStore()
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -42,7 +45,7 @@ export default function DashboardLayout() {
             className="flex flex-col md:flex-row items-center gap-1 md:gap-3 p-2 md:px-4 md:py-3 rounded-xl hover:bg-gray-100 text-gray-700 font-medium transition-colors"
           >
             <LayoutDashboard className="w-6 h-6 md:w-5 md:h-5 text-gray-500" />
-            <span className="text-[10px] md:text-sm">Dashboard</span>
+            <span className="text-[10px] md:text-sm">{t('dashboard.sidebar.dashboard')}</span>
           </Link>
 
           {user?.role !== 'ADMIN' && (
@@ -51,7 +54,7 @@ export default function DashboardLayout() {
               className="flex flex-col md:flex-row items-center gap-1 md:gap-3 p-2 md:px-4 md:py-3 rounded-xl hover:bg-amber-50 text-amber-700 font-medium transition-colors"
             >
               <Star className="w-6 h-6 md:w-5 md:h-5 text-amber-500" />
-              <span className="text-[10px] md:text-sm">Upgrade VIP</span>
+              <span className="text-[10px] md:text-sm">{t('dashboard.sidebar.upgrade_vip')}</span>
             </Link>
           )}
 
@@ -61,7 +64,7 @@ export default function DashboardLayout() {
               className="flex flex-col md:flex-row items-center gap-1 md:gap-3 p-2 md:px-4 md:py-3 rounded-xl hover:bg-purple-50 text-purple-700 font-medium transition-colors"
             >
               <ShieldCheck className="w-6 h-6 md:w-5 md:h-5 text-purple-500" />
-              <span className="text-[10px] md:text-sm">Admin Panel</span>
+              <span className="text-[10px] md:text-sm">{t('dashboard.sidebar.admin_panel')}</span>
             </Link>
           )}
 
@@ -72,7 +75,7 @@ export default function DashboardLayout() {
             className="hidden md:flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-50 text-red-600 font-medium transition-colors w-full text-left mt-auto"
           >
             <LogOut className="w-5 h-5" />
-            <span>Logout</span>
+            <span>{t('dashboard.sidebar.logout')}</span>
           </button>
         </nav>
       </aside>
@@ -85,8 +88,8 @@ export default function DashboardLayout() {
             <div>
               {!(location.pathname.includes('/vip-upgrade') || location.pathname.includes('/payment-success')) && (
                 <>
-                  <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-                  <p className="text-sm text-gray-500">Welcome back, {user?.name}</p>
+                  <h1 className="text-2xl font-bold text-gray-900">{t('dashboard.sidebar.dashboard')}</h1>
+                  <p className="text-sm text-gray-500">{t('dashboard.welcome_back', { name: user?.name })}</p>
                 </>
               )}
             </div>
@@ -94,9 +97,13 @@ export default function DashboardLayout() {
             <div className="flex items-center gap-3">
               {user?.vip && (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-amber-400 to-amber-500 text-white shadow-sm shadow-amber-200">
-                  <Star className="w-3.5 h-3.5 fill-current" /> VIP Active
+                  <Star className="w-3.5 h-3.5 fill-current" /> {t('dashboard.vip_active')}
                 </span>
               )}
+
+              <div className="flex items-center gap-2 border-l border-gray-200 pl-3 ml-1">
+                 <LanguageSwitcher />
+              </div>
 
               <button
                 onClick={handleLogout}

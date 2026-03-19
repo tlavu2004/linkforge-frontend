@@ -4,11 +4,13 @@ import { apiClient } from '../api/axios'
 import type { ApiResponse, UserLinkResponse, PageResponse } from '../types'
 import { LinkIcon, Copy, Check, Loader2, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUpDown, MousePointerClick, Clock, Search, ArrowLeft, QrCode, X } from 'lucide-react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 type SortField = 'createdAt' | 'expiresAt' | 'originalUrl' | 'clickCount'
 type SortDirection = 'asc' | 'desc'
 
 export default function AdminUserLinks() {
+  const { t, i18n } = useTranslation()
   const { userId } = useParams<{ userId: string }>()
   const navigate = useNavigate()
 
@@ -70,7 +72,7 @@ export default function AdminUserLinks() {
         setIsLoadingLinks(false)
       }
     }
-  }, [userId, page, size, sortBy, direction, debouncedKeyword])
+  }, [userId, page, size, sortBy, direction, debouncedKeyword, t])
 
   useEffect(() => {
     fetchLinks()
@@ -78,19 +80,19 @@ export default function AdminUserLinks() {
 
   const handleDeleteLink = async (shortCode: string) => {
     setConfirmConfig({
-      title: 'Delete Link?',
-      message: `Are you sure you want to permanently delete the link "${shortCode}"? This action cannot be undone.`,
+      title: t('admin.user_links.delete_link_title'),
+      message: t('admin.user_links.delete_link_desc', { code: shortCode }),
       isLoading: false,
       onConfirm: async () => {
         setConfirmConfig(prev => prev ? { ...prev, isLoading: true } : null)
         try {
           await apiClient.delete(`/admin/users/${userId}/links/${shortCode}`)
-          toast.success('Link deleted successfully!')
+          toast.success(t('admin.user_links.delete_success'))
           setShowDeleteConfirm(false)
           setConfirmConfig(null)
           fetchLinks()
         } catch (err: any) {
-          toast.error(err.response?.data?.message || 'Failed to delete link.')
+          toast.error(err.response?.data?.message || t('admin.user_links.delete_error'))
           setConfirmConfig(prev => prev ? { ...prev, isLoading: false } : null)
         }
       }
@@ -103,7 +105,7 @@ export default function AdminUserLinks() {
     try {
       const { data } = await apiClient.post<ApiResponse<any>>(`/admin/users/${userId}/links/${shortCode}/qr-code`)
       if (data.success) {
-        toast.success('QR Code generated!')
+        toast.success(t('admin.user_links.qr_generated'))
         if (selectedLinkForQr && selectedLinkForQr.shortCode === shortCode) {
           setSelectedLinkForQr({ ...selectedLinkForQr, qrCode: data.data.qrCode })
         }
@@ -111,7 +113,7 @@ export default function AdminUserLinks() {
         setLinks(prev => prev.map(l => l.shortCode === shortCode ? { ...l, qrCode: data.data.qrCode } : l))
       }
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to generate QR code.')
+      toast.error(err.response?.data?.message || t('admin.user_links.qr_generate_error'))
     } finally {
       setIsGeneratingQr(false)
     }
@@ -119,8 +121,8 @@ export default function AdminUserLinks() {
 
   const handleDeleteQr = async (shortCode: string) => {
     setConfirmConfig({
-      title: 'Delete QR Code?',
-      message: 'This will permanently remove the QR code for this link. You can always regenerate it later.',
+      title: t('dashboard.delete_qr_title'),
+      message: t('dashboard.delete_qr_desc'),
       isLoading: false,
       onConfirm: async () => {
         setConfirmConfig(prev => prev ? { ...prev, isLoading: true } : null)
@@ -128,7 +130,7 @@ export default function AdminUserLinks() {
         try {
           const { data } = await apiClient.delete<ApiResponse<any>>(`/admin/users/${userId}/links/${shortCode}/qr-code`)
           if (data.success) {
-            toast.success('QR Code deleted!')
+            toast.success(t('admin.user_links.qr_deleted'))
             if (selectedLinkForQr && selectedLinkForQr.shortCode === shortCode) {
               setSelectedLinkForQr({ ...selectedLinkForQr, qrCode: undefined })
             }
@@ -138,7 +140,7 @@ export default function AdminUserLinks() {
             setConfirmConfig(null)
           }
         } catch (err: any) {
-          toast.error(err.response?.data?.message || 'Failed to delete QR code.')
+          toast.error(err.response?.data?.message || t('admin.user_links.qr_delete_error'))
           setConfirmConfig(prev => prev ? { ...prev, isLoading: false } : null)
         } finally {
           setIsDeletingQr(false)
@@ -151,7 +153,7 @@ export default function AdminUserLinks() {
   const copyLinkToClipboard = (shortCode: string) => {
     navigator.clipboard.writeText(window.location.origin + '/r/' + shortCode)
     setCopiedLinkUrl(shortCode)
-    toast.success('Copied to clipboard!')
+    toast.success(t('admin.user_links.short_link_copied'))
     setTimeout(() => setCopiedLinkUrl(null), 2000)
   }
 
@@ -166,7 +168,7 @@ export default function AdminUserLinks() {
   }
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('vi-VN', {
+    return new Date(dateStr).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'vi-VN', {
       day: '2-digit', month: '2-digit', year: 'numeric',
       hour: '2-digit', minute: '2-digit', second: '2-digit',
     })
@@ -195,7 +197,7 @@ export default function AdminUserLinks() {
           className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Admin Dashboard
+          {t('admin.user_links.back')}
         </button>
 
         <section className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
@@ -203,9 +205,9 @@ export default function AdminUserLinks() {
             <div>
               <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                 <LinkIcon className="w-5 h-5 text-primary-500" />
-                Manage User Links
+                {t('admin.user_links.title')}
               </h3>
-              <p className="text-sm text-gray-500 mt-1">Viewing links for User ID: {userId}</p>
+              <p className="text-sm text-gray-500 mt-1">{t('admin.user_links.subtitle', { userId })}</p>
             </div>
 
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto flex-1 justify-end">
@@ -215,7 +217,7 @@ export default function AdminUserLinks() {
                 </div>
                 <input
                   type="text"
-                  placeholder="Search links..."
+                  placeholder={t('admin.user_links.search_placeholder')}
                   value={keyword}
                   onChange={(e) => setKeyword(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white transition-all"
@@ -224,10 +226,10 @@ export default function AdminUserLinks() {
 
               <div className="flex items-center gap-2 flex-wrap">
                 <ArrowUpDown className="w-4 h-4 text-gray-400" />
-                <SortButton field="createdAt" label="Created" />
-                <SortButton field="expiresAt" label="Expires" />
-                <SortButton field="originalUrl" label="URL" />
-                <SortButton field="clickCount" label="Clicks" />
+                <SortButton field="createdAt" label={t('table.created')} />
+                <SortButton field="expiresAt" label={t('table.expires')} />
+                <SortButton field="originalUrl" label={t('table.url')} />
+                <SortButton field="clickCount" label={t('table.clicks')} />
               </div>
             </div>
           </div>
@@ -239,8 +241,8 @@ export default function AdminUserLinks() {
           ) : links.length === 0 ? (
             <div className="py-16 text-center">
               <LinkIcon className="w-12 h-12 text-gray-200 mx-auto mb-4" />
-              <h4 className="text-lg font-medium text-gray-500 mb-1">No links found</h4>
-              <p className="text-sm text-gray-400">This user hasn't created any links matching your criteria.</p>
+              <h4 className="text-lg font-medium text-gray-500 mb-1">{t('admin.user_links.no_links')}</h4>
+              <p className="text-sm text-gray-400">{t('admin.user_links.no_links_desc')}</p>
             </div>
           ) : (
             <>
@@ -258,12 +260,12 @@ export default function AdminUserLinks() {
                         <button
                           onClick={() => copyLinkToClipboard(link.shortCode)}
                           className="p-1.5 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-md transition-colors"
-                          title="Copy short link"
+                          title={t('home.copied')}
                         >
                           {copiedLinkUrl === link.shortCode ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
                         </button>
                         {link.expired && (
-                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-red-100 text-red-600">Expired</span>
+                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-red-100 text-red-600">{t('dashboard.status_expired')}</span>
                         )}
                       </div>
                       <a
@@ -277,30 +279,30 @@ export default function AdminUserLinks() {
                     </div>
 
                     <div className="flex items-center gap-4 text-xs text-gray-400 shrink-0">
-                      <div className="flex items-center gap-1" title="Clicks">
+                      <div className="flex items-center gap-1" title={t('table.clicks')}>
                         <MousePointerClick className="w-3.5 h-3.5" />
                         <span className="font-medium text-gray-600">{link.clickCount}</span>
                       </div>
-                      <div className="flex items-center gap-1" title="Created">
+                      <div className="flex items-center gap-1" title={t('table.created')}>
                         <Clock className="w-3.5 h-3.5" />
                         <span>{formatDate(link.createdAt)}</span>
                       </div>
-                      <div className="hidden sm:flex items-center gap-1 border-l border-gray-200 pl-4 ml-2" title="Expires">
+                      <div className="hidden sm:flex items-center gap-1 border-l border-gray-200 pl-4 ml-2" title={t('table.expires')}>
                         <Clock className="w-3.5 h-3.5 text-amber-500" />
-                        <span>{link.expiresAt ? formatDate(link.expiresAt) : 'Never'}</span>
+                        <span>{link.expiresAt ? formatDate(link.expiresAt) : t('dashboard.status_never')}</span>
                       </div>
                       <div className="flex items-center gap-1 border-l border-gray-200 pl-4 ml-2">
                         <button
                           onClick={() => setSelectedLinkForQr(link)}
                           className={`p-2 rounded-lg transition-colors ${link.qrCode ? 'text-primary-600 bg-primary-50 hover:bg-primary-100' : 'text-gray-400 hover:text-primary-600 hover:bg-primary-50'}`}
-                          title={link.qrCode ? "View QR Code" : "Generate QR Code"}
+                          title={link.qrCode ? t('admin.user_links.view_qr') : t('admin.user_links.generate_qr')}
                         >
                           <QrCode className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDeleteLink(link.shortCode)}
                           className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                          title="Delete link"
+                          title={t('common.delete')}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -313,9 +315,9 @@ export default function AdminUserLinks() {
               {totalPages > 0 && (
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-6 border-t border-gray-100">
                   <div className="flex items-center gap-4 text-sm text-gray-500 flex-wrap justify-center">
-                    <span>Page {page + 1} of {totalPages}</span>
+                    <span>{t('pagination.page_info', { current: page + 1, total: totalPages })}</span>
                     <div className="flex items-center gap-2 border-l border-gray-200 pl-4">
-                      <span>Show:</span>
+                      <span>{t('pagination.show')}:</span>
                       <select
                         value={size}
                         onChange={(e) => {
@@ -360,7 +362,7 @@ export default function AdminUserLinks() {
                       onClick={() => setPage(0)}
                       disabled={page === 0}
                       className="p-1.5 sm:p-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-gray-600"
-                      title="First Page"
+                      title={t('pagination.first')}
                     >
                       <ChevronsLeft className="w-4 h-4" />
                     </button>
@@ -368,7 +370,7 @@ export default function AdminUserLinks() {
                       onClick={() => setPage(p => Math.max(0, p - 1))}
                       disabled={page === 0}
                       className="p-1.5 sm:p-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-gray-600"
-                      title="Previous Page"
+                      title={t('pagination.prev')}
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </button>
@@ -376,7 +378,7 @@ export default function AdminUserLinks() {
                       onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                       disabled={page >= totalPages - 1}
                       className="p-1.5 sm:p-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-gray-600"
-                      title="Next Page"
+                      title={t('pagination.next')}
                     >
                       <ChevronRight className="w-4 h-4" />
                     </button>
@@ -384,7 +386,7 @@ export default function AdminUserLinks() {
                       onClick={() => setPage(totalPages - 1)}
                       disabled={page >= totalPages - 1}
                       className="p-1.5 sm:p-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-gray-600"
-                      title="Last Page"
+                      title={t('pagination.last')}
                     >
                       <ChevronsRight className="w-4 h-4" />
                     </button>
@@ -402,7 +404,7 @@ export default function AdminUserLinks() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden">
             <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-gray-900">QR Code</h3>
+              <h3 className="text-lg font-bold text-gray-900">{t('dashboard.qr_modal_title')}</h3>
               <button
                 onClick={() => setSelectedLinkForQr(null)}
                 className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-500"
@@ -423,7 +425,7 @@ export default function AdminUserLinks() {
               ) : (
                 <div className="w-48 h-48 rounded-2xl bg-gray-50 border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-center p-6 mb-6">
                   <QrCode className="w-12 h-12 text-gray-300 mb-2" />
-                  <p className="text-sm text-gray-400 font-medium">No QR code generated yet</p>
+                  <p className="text-sm text-gray-400 font-medium">{t('dashboard.qr_not_generated')}</p>
                 </div>
               )}
 
@@ -435,7 +437,7 @@ export default function AdminUserLinks() {
                     className="w-full py-3 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed text-white rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
                   >
                     {isGeneratingQr ? <Loader2 className="w-5 h-5 animate-spin" /> : <QrCode className="w-5 h-5" />}
-                    Generate QR Code
+                    {t('dashboard.qr_generate')}
                   </button>
                 ) : (
                   <button
@@ -444,12 +446,12 @@ export default function AdminUserLinks() {
                     className="w-full py-3 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
                   >
                     {isDeletingQr ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-5 h-5" />}
-                    Delete QR Code
+                    {t('admin.user_links.delete_qr')}
                   </button>
                 )}
 
                 <p className="text-[10px] text-center text-gray-400 font-medium">
-                  Scan to share {window.location.host}/r/{selectedLinkForQr.shortCode}
+                  {t('admin.user_links.scan_to_share', { url: `${window.location.host}/r/${selectedLinkForQr.shortCode}` })}
                 </p>
               </div>
             </div>
@@ -475,14 +477,14 @@ export default function AdminUserLinks() {
                 disabled={confirmConfig.isLoading}
                 className="w-full py-3 bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-white rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
               >
-                {confirmConfig.isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Confirm Delete'}
+                {confirmConfig.isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : t('dashboard.confirm_delete_link')}
               </button>
               <button
                 onClick={() => { setShowDeleteConfirm(false); setConfirmConfig(null); }}
                 disabled={confirmConfig.isLoading}
                 className="w-full py-3 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl font-semibold transition-all"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
             </div>
           </div>

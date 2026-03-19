@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
+import { useTranslation } from 'react-i18next'
 import { apiClient } from '../api/axios'
 import type { ApiResponse } from '../types'
 import { Mail, ShieldCheck, Loader2, AlertCircle, RefreshCw } from 'lucide-react'
 
 export default function VerifyEmail() {
+  const { t } = useTranslation()
   const [searchParams] = useSearchParams()
   const email = searchParams.get('email') || ''
   const [otp, setOtp] = useState('')
@@ -34,14 +36,14 @@ export default function VerifyEmail() {
       const { data } = await apiClient.post<ApiResponse<null>>('/auth/verify-email', { email, otp })
       if (data.success) {
         setSuccess(true)
-        toast.success('Email verified! You can now sign in.')
+        toast.success(t('verify_email.success_title') + ' ' + t('verify_email.success_subtitle'))
         setTimeout(() => navigate('/login'), 2000)
       } else {
-        setError(data.message || 'Verification failed')
+        setError(data.message || t('verify_email.error_default'))
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Invalid or expired OTP. Please try again.')
-      toast.error('Verification failed')
+      setError(err.response?.data?.message || t('verify_email.error_default'))
+      toast.error(t('verify_email.error_default'))
     } finally {
       setIsLoading(false)
     }
@@ -53,10 +55,10 @@ export default function VerifyEmail() {
     setIsResending(true)
     try {
       await apiClient.post<ApiResponse<null>>('/auth/resend-otp', { email })
-      toast.success('New verification code sent!')
+      toast.success(t('verify_email.resend_success'))
       setCooldown(60)
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to resend code')
+      toast.error(err.response?.data?.message || t('common.error'))
     } finally {
       setIsResending(false)
     }
@@ -68,8 +70,8 @@ export default function VerifyEmail() {
         <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center">
           <ShieldCheck className="w-8 h-8 text-green-600" />
         </div>
-        <h1 className="text-2xl font-bold text-gray-900">Email Verified!</h1>
-        <p className="text-gray-500">Redirecting to sign in...</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('verify_email.success_title')}</h1>
+        <p className="text-gray-500">{t('verify_email.success_subtitle')}</p>
       </div>
     )
   }
@@ -80,9 +82,9 @@ export default function VerifyEmail() {
         <div className="w-14 h-14 mx-auto bg-primary-100 rounded-full flex items-center justify-center mb-4">
           <Mail className="w-7 h-7 text-primary-600" />
         </div>
-        <h1 className="text-2xl font-bold text-gray-900">Verify your email</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t('verify_email.title')}</h1>
         <p className="text-gray-500 text-sm">
-          We sent a 6-digit code to <span className="font-semibold text-gray-700">{email}</span>
+          {t('verify_email.subtitle', { email })}
         </p>
       </div>
 
@@ -95,7 +97,7 @@ export default function VerifyEmail() {
 
       <form onSubmit={handleVerify} className="space-y-4">
         <div className="space-y-1">
-          <label className="text-sm font-medium text-gray-700 block">Verification Code</label>
+          <label className="text-sm font-medium text-gray-700 block">{t('verify_email.code_label')}</label>
           <input
             type="text"
             value={otp}
@@ -116,10 +118,10 @@ export default function VerifyEmail() {
           {isLoading ? (
             <>
               <Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4" />
-              Verifying...
+              {t('verify_email.verifying')}
             </>
           ) : (
-            'Verify Email'
+            t('verify_email.submit')
           )}
         </button>
       </form>
@@ -131,7 +133,7 @@ export default function VerifyEmail() {
           className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-600 hover:text-primary-500 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isResending ? 'animate-spin' : ''}`} />
-          {cooldown > 0 ? `Resend code in ${cooldown}s` : 'Resend code'}
+          {cooldown > 0 ? t('verify_email.resend_cooldown', { count: cooldown }) : t('verify_email.resend_btn')}
         </button>
       </div>
     </div>

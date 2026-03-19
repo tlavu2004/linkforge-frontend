@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
+import { useTranslation } from 'react-i18next'
 import { apiClient } from '../api/axios'
 import type { ApiResponse, AuthResponse } from '../types'
 import { useAuthStore } from '../store/useAuthStore'
 import { Mail, Lock, AlertCircle, Loader2 } from 'lucide-react'
 
 export default function Login() {
+  const { t } = useTranslation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -27,21 +29,21 @@ export default function Login() {
 
       if (data.success && data.data) {
         setAuth(data.data)
-        toast.success(`Welcome back, ${data.data.email}!`)
+        toast.success(t('login.success_msg', { name: data.data.email }))
         navigate('/dashboard')
       } else {
-        setError(data.message || 'Login failed')
-        toast.error(data.message || 'Login failed')
+        setError(data.message || t('login.error_invalid'))
+        toast.error(data.message || t('login.error_invalid'))
       }
     } catch (err: any) {
-      const message = err.response?.data?.message || 'Invalid email or password. Please try again.'
-      if (message.toLowerCase().includes('not verified')) {
-        toast.error('Please verify your email first')
+      const message = err.response?.data?.message || t('login.error_invalid')
+      if (message.toLowerCase().includes('not verified') || message.toLowerCase().includes('xác thực')) {
+        toast.error(t('login.error_verify'))
         navigate(`/verify-email?email=${encodeURIComponent(email)}`)
         return
       }
       setError(message)
-      toast.error('Login failed')
+      toast.error(t('login.error_invalid'))
     } finally {
       setIsLoading(false)
     }
@@ -50,8 +52,8 @@ export default function Login() {
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2">
-        <h1 className="text-2xl font-bold text-gray-900">Welcome back</h1>
-        <p className="text-gray-500 text-sm">Please enter your details to sign in.</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('login.title')}</h1>
+        <p className="text-gray-500 text-sm">{t('login.subtitle')}</p>
       </div>
 
       {error && (
@@ -63,7 +65,7 @@ export default function Login() {
 
       <form onSubmit={handleLogin} className="space-y-4">
         <div className="space-y-1">
-          <label className="text-sm font-medium text-gray-700 block">Email</label>
+          <label className="text-sm font-medium text-gray-700 block">{t('login.email')}</label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Mail className="h-5 w-5 text-gray-400" />
@@ -80,7 +82,7 @@ export default function Login() {
         </div>
 
         <div className="space-y-1">
-          <label className="text-sm font-medium text-gray-700 block">Password</label>
+          <label className="text-sm font-medium text-gray-700 block">{t('login.password')}</label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Lock className="h-5 w-5 text-gray-400" />
@@ -98,7 +100,7 @@ export default function Login() {
 
         <div className="flex justify-end">
           <Link to="/forgot-password" className="text-sm font-medium text-primary-600 hover:text-primary-500 transition-colors">
-            Forgot password?
+            {t('login.forgot_password')}
           </Link>
         </div>
 
@@ -110,18 +112,18 @@ export default function Login() {
           {isLoading ? (
             <>
               <Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" />
-              Signing in...
+              {t('login.signing_in')}
             </>
           ) : (
-            'Sign in'
+            t('login.submit')
           )}
         </button>
       </form>
 
       <p className="text-center text-sm text-gray-600">
-        Don't have an account?{' '}
+        {t('login.no_account')}{' '}
         <Link to="/register" className="font-semibold text-primary-600 hover:text-primary-500 transition-colors">
-          Sign up
+          {t('login.signup')}
         </Link>
       </p>
     </div>

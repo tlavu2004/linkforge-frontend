@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { toast } from 'react-hot-toast'
+import { useTranslation } from 'react-i18next'
 import { apiClient } from '../api/axios'
 import type { ShortLinkResponse, ApiResponse, UserLinkResponse, PageResponse } from '../types'
 import { LinkIcon, Copy, Check, ExternalLink, Loader2, AlertCircle, LayoutDashboard, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUpDown, MousePointerClick, Clock, Search, Calendar, X, QrCode, Star, BarChart3 } from 'lucide-react'
@@ -10,6 +11,7 @@ type SortField = 'createdAt' | 'expiresAt' | 'originalUrl' | 'clickCount'
 type SortDirection = 'asc' | 'desc'
 
 export default function Dashboard() {
+  const { t, i18n } = useTranslation()
   const [url, setUrl] = useState('')
   const [expiresAt, setExpiresAt] = useState('')
   const [customAlias, setCustomAlias] = useState('')
@@ -122,16 +124,16 @@ export default function Dashboard() {
         setUrl('')
         setCustomAlias('')
         setExpiresAt('')
-        toast.success('Link shortened successfully!')
+        toast.success(t('home.success_msg'))
         // Refresh link list
         fetchLinks()
       } else {
-        setError(data.message || 'Failed to create short link.')
-        toast.error(data.message || 'Failed to create short link.')
+        setError(data.message || t('home.error_default'))
+        toast.error(data.message || t('home.error_default'))
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'An error occurred. Please try again later.')
-      toast.error(err.response?.data?.message || 'An error occurred.')
+      setError(err.response?.data?.message || t('home.error_default'))
+      toast.error(err.response?.data?.message || t('home.error_default'))
     } finally {
       setIsLoading(false)
     }
@@ -141,10 +143,10 @@ export default function Dashboard() {
     setDeletingCode(shortCode)
     try {
       await apiClient.delete(`/me/links/${shortCode}`)
-      toast.success('Link deleted!')
+      toast.success(t('common.success'))
       fetchLinks()
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to delete link.')
+      toast.error(err.response?.data?.message || t('common.error'))
     } finally {
       setDeletingCode(null)
     }
@@ -155,7 +157,7 @@ export default function Dashboard() {
     try {
       const { data } = await apiClient.post<ApiResponse<ShortLinkResponse>>(`/me/links/${shortCode}/qr-code`)
       if (data.success) {
-        toast.success('QR Code generated!')
+        toast.success(t('common.success'))
         // Update local state for the modal
         if (selectedLinkForQr && selectedLinkForQr.shortCode === shortCode) {
           setSelectedLinkForQr({ ...selectedLinkForQr, qrCode: data.data.qrCode })
@@ -167,7 +169,7 @@ export default function Dashboard() {
         }
       }
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to generate QR code.')
+      toast.error(err.response?.data?.message || t('common.error'))
     } finally {
       setIsGeneratingQr(false)
     }
@@ -190,7 +192,7 @@ export default function Dashboard() {
     try {
       const { data } = await apiClient.delete<ApiResponse<ShortLinkResponse>>(`/me/links/${shortCode}/qr-code`)
       if (data.success) {
-        toast.success('QR Code deleted!')
+        toast.success(t('common.success'))
         if (selectedLinkForQr && selectedLinkForQr.shortCode === shortCode) {
           setSelectedLinkForQr({ ...selectedLinkForQr, qrCode: undefined })
         }
@@ -203,7 +205,7 @@ export default function Dashboard() {
         setQrCodeToRemove(null)
       }
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to delete QR code.')
+      toast.error(err.response?.data?.message || t('common.error'))
     } finally {
       setIsDeletingQr(false)
     }
@@ -212,14 +214,14 @@ export default function Dashboard() {
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
     setCopiedUrl(true)
-    toast.success('Copied to clipboard!')
+    toast.success(t('home.copied'))
     setTimeout(() => setCopiedUrl(false), 2000)
   }
 
   const copyLinkToClipboard = (shortCode: string) => {
     navigator.clipboard.writeText(window.location.origin + '/r/' + shortCode)
     setCopiedLinkUrl(shortCode)
-    toast.success('Copied to clipboard!')
+    toast.success(t('home.copied'))
     setTimeout(() => setCopiedLinkUrl(null), 2000)
   }
 
@@ -234,7 +236,7 @@ export default function Dashboard() {
   }
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('vi-VN', {
+    return new Date(dateStr).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'vi-VN', {
       day: '2-digit', month: '2-digit', year: 'numeric',
       hour: '2-digit', minute: '2-digit', second: '2-digit',
     })
@@ -264,7 +266,7 @@ export default function Dashboard() {
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-50 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 opacity-50 pointer-events-none" />
 
           <div className="relative">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Create New Short Link</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-6">{t('dashboard.create_title')}</h2>
 
             <form onSubmit={handleShorten} className="bg-white border border-gray-200 rounded-2xl md:rounded-[2rem] shadow-sm flex flex-col md:flex-row items-stretch p-2 focus-within:ring-2 focus-within:ring-primary-500 transition-all">
               <div className="flex-1 w-full relative flex items-center">
@@ -275,8 +277,8 @@ export default function Dashboard() {
                   type="url"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
-                  placeholder="Paste your long URL here..."
-                  className="w-full bg-transparent outline-none text-gray-900 placeholder:text-gray-400 font-medium text-base md:text-lg pl-4 md:pl-14 pr-4 py-3 md:py-4"
+                  placeholder={t('home.placeholder')}
+                  className="w-full bg-transparent outline-none text-gray-900 placeholder:text-gray-400 font-medium text-sm md:text-base pl-4 md:pl-14 pr-4 py-3 md:py-4"
                   required
                   disabled={isLoading}
                 />
@@ -288,7 +290,7 @@ export default function Dashboard() {
                     type="text"
                     value={customAlias}
                     onChange={(e) => setCustomAlias(e.target.value.substring(0, 50).trim())}
-                    placeholder="Custom alias (optional)"
+                    placeholder={t('home.custom_alias')}
                     className="w-full bg-transparent outline-none text-gray-900 placeholder:text-gray-400 font-medium text-sm md:text-base px-4 py-3 md:py-4 min-w-[150px] md:min-w-[180px] pr-10"
                     disabled={isLoading}
                   />
@@ -313,9 +315,9 @@ export default function Dashboard() {
                   }}
                 >
                   <div className="flex items-center pl-4 md:pl-5 pr-3 md:pr-4 py-3 md:py-4 w-full justify-between gap-3 min-w-[210px] md:min-w-[250px]">
-                    <span className={`text-sm font-medium whitespace-nowrap ${expiresAt ? 'text-gray-900' : 'text-gray-400'}`}>
+                    <span className={`text-sm md:text-base font-medium whitespace-nowrap ${expiresAt ? 'text-gray-900' : 'text-gray-400'}`}>
                       {expiresAt
-                        ? new Date(expiresAt).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+                        ? new Date(expiresAt).toLocaleString(i18n.language === 'en' ? 'en-US' : 'vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
                         : 'dd/mm/yyyy hh:mm:ss'}
                     </span>
 
@@ -328,7 +330,7 @@ export default function Dashboard() {
                         disabled={!expiresAt}
                         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setExpiresAt(''); }}
                         className={`p-2 rounded-md transition-colors ${expiresAt ? 'text-gray-400 hover:text-red-600 hover:bg-red-50' : 'text-gray-200 cursor-not-allowed opacity-50'}`}
-                        title={expiresAt ? "Clear expiration date" : ""}
+                        title={expiresAt ? t('common.clear_expiration', { defaultValue: 'Clear expiration date' }) : ""}
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -351,9 +353,9 @@ export default function Dashboard() {
               <button
                 type="submit"
                 disabled={isLoading || !url}
-                className="w-full md:w-auto bg-primary-600 hover:bg-primary-700 disabled:bg-primary-300 disabled:cursor-not-allowed text-white px-8 py-3 md:py-4 rounded-xl md:rounded-full font-semibold transition-all shadow-md hover:shadow-lg flex justify-center items-center h-full"
+                className="w-full md:w-auto bg-primary-600 hover:bg-primary-700 disabled:bg-primary-300 disabled:cursor-not-allowed text-white px-8 py-3 md:py-4 rounded-xl md:rounded-full font-semibold text-sm md:text-base transition-all shadow-md hover:shadow-lg flex justify-center items-center h-full"
               >
-                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Shorten'}
+                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : t('dashboard.shorten_btn')}
               </button>
             </form>
 
@@ -367,7 +369,7 @@ export default function Dashboard() {
             {!user?.vip && user?.role !== 'ADMIN' && (
               <div className="mt-6 flex items-center rounded-xl bg-amber-50/80 border border-amber-100 p-4 text-sm text-amber-800">
                 <Star className="w-5 h-5 mr-3 text-amber-500 shrink-0" />
-                <p>Want to completely bypass advertisement pages for your visitors? <Link to="/vip-upgrade" className="font-semibold underline hover:text-amber-900 text-amber-700">Upgrade to VIP today!</Link></p>
+                <p>{t('dashboard.vip_ad_bypass')} <Link to="/vip-upgrade" className="font-semibold underline hover:text-amber-900 text-amber-700">{t('dashboard.upgrade_vip')}</Link></p>
               </div>
             )}
           </div>
@@ -377,7 +379,7 @@ export default function Dashboard() {
         {recentLink && (
           <section className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 animate-in slide-in-from-bottom-4 duration-500">
             <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-green-500 inline-block animate-pulse" /> Just Created
+              <span className="w-2 h-2 rounded-full bg-green-500 inline-block animate-pulse" /> {t('dashboard.just_created')}
             </h3>
             <div className="flex flex-col md:flex-row gap-4 items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-200/60">
               <div className="w-full md:w-auto overflow-hidden flex-1">
@@ -395,7 +397,7 @@ export default function Dashboard() {
                   className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 hover:border-primary-300 hover:bg-primary-50 text-gray-700 hover:text-primary-700 rounded-lg transition-colors text-sm font-medium"
                 >
                   {copiedUrl ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
-                  Copy
+                  {t('common.copy', { defaultValue: 'Copy' })}
                 </button>
                 <a
                   href={`/r/${recentLink.shortCode}`}
@@ -404,14 +406,14 @@ export default function Dashboard() {
                   className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-100 text-gray-700 rounded-lg transition-colors text-sm font-medium"
                 >
                   <ExternalLink className="w-4 h-4" />
-                  Visit
+                  {t('common.visit', { defaultValue: 'Visit' })}
                 </a>
                 <button
                   onClick={() => setSelectedLinkForQr(recentLink as any)}
                   className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 hover:border-primary-300 hover:bg-primary-50 text-gray-700 hover:text-primary-700 rounded-lg transition-colors text-sm font-medium"
                 >
                   <QrCode className="w-4 h-4" />
-                  QR Code
+                  {t('dashboard.qr_modal_title')}
                 </button>
               </div>
             </div>
@@ -424,10 +426,10 @@ export default function Dashboard() {
             <div>
               <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                 <LayoutDashboard className="w-5 h-5 text-primary-500" />
-                My Links
+                {t('dashboard.my_links')}
               </h3>
               <p className="text-sm text-gray-500 mt-1">
-                <span className="font-bold text-gray-900">{totalElements || 0}</span> link{totalElements !== 1 ? 's' : ''} total
+                {totalElements === 1 ? t('dashboard.total_links', { count: totalElements }) : t('dashboard.total_links_plural', { count: totalElements })}
               </p>
             </div>
 
@@ -439,7 +441,7 @@ export default function Dashboard() {
                 </div>
                 <input
                   type="text"
-                  placeholder="Search links..."
+                  placeholder={t('dashboard.search_placeholder')}
                   value={keyword}
                   onChange={(e) => setKeyword(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white transition-all"
@@ -449,10 +451,10 @@ export default function Dashboard() {
               {/* Sort Controls */}
               <div className="flex items-center gap-2 flex-wrap">
                 <ArrowUpDown className="w-4 h-4 text-gray-400" />
-                <SortButton field="createdAt" label="Created" />
-                <SortButton field="expiresAt" label="Expires" />
-                <SortButton field="originalUrl" label="URL" />
-                <SortButton field="clickCount" label="Clicks" />
+                <SortButton field="createdAt" label={t('table.created')} />
+                <SortButton field="expiresAt" label={t('table.expires')} />
+                <SortButton field="originalUrl" label={t('table.url')} />
+                <SortButton field="clickCount" label={t('table.clicks')} />
               </div>
             </div>
           </div>
@@ -464,8 +466,8 @@ export default function Dashboard() {
           ) : links.length === 0 ? (
             <div className="py-16 text-center">
               <LinkIcon className="w-12 h-12 text-gray-200 mx-auto mb-4" />
-              <h4 className="text-lg font-medium text-gray-500 mb-1">No links yet</h4>
-              <p className="text-sm text-gray-400">Create your first short link above!</p>
+              <h4 className="text-lg font-medium text-gray-500 mb-1">{t('dashboard.no_links')}</h4>
+              <p className="text-sm text-gray-400">{t('dashboard.create_first')}</p>
             </div>
           ) : (
             <>
@@ -483,12 +485,12 @@ export default function Dashboard() {
                         <button
                           onClick={() => copyLinkToClipboard(link.shortCode)}
                           className="p-1.5 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-md transition-colors"
-                          title="Copy short link"
+                          title={t('common.copy', { defaultValue: 'Copy short link' })}
                         >
                           {copiedLinkUrl === link.shortCode ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
                         </button>
                         {link.expired && (
-                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-red-100 text-red-600">Expired</span>
+                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-red-100 text-red-600">{t('dashboard.status_expired')}</span>
                         )}
                       </div>
                       <a
@@ -502,30 +504,30 @@ export default function Dashboard() {
                     </div>
 
                     <div className="flex items-center gap-4 text-xs text-gray-400 shrink-0">
-                      <div className="flex items-center gap-1" title="Clicks">
+                      <div className="flex items-center gap-1" title={t('table.clicks')}>
                         <MousePointerClick className="w-3.5 h-3.5" />
                         <span className="font-medium text-gray-600">{link.clickCount}</span>
                       </div>
-                      <div className="flex items-center gap-1" title="Created">
+                      <div className="flex items-center gap-1" title={t('table.created')}>
                         <Clock className="w-3.5 h-3.5" />
                         <span>{formatDate(link.createdAt)}</span>
                       </div>
-                      <div className="hidden sm:flex items-center gap-1 border-l border-gray-200 pl-4 ml-2" title="Expires">
+                      <div className="hidden sm:flex items-center gap-1 border-l border-gray-200 pl-4 ml-2" title={t('table.expires')}>
                         <Clock className="w-3.5 h-3.5 text-amber-500" />
-                        <span>{link.expiresAt ? formatDate(link.expiresAt) : 'Never'}</span>
+                        <span>{link.expiresAt ? formatDate(link.expiresAt) : t('dashboard.status_never')}</span>
                       </div>
                       <div className="flex items-center gap-1 border-l border-gray-200 pl-4 ml-2">
                         <Link
                           to={`/dashboard/links/${link.shortCode}/analytics`}
                           className="p-2 rounded-lg text-gray-400 hover:text-primary-600 hover:bg-primary-50 transition-colors"
-                          title="View Analytics"
+                          title={t('common.view_analytics', { defaultValue: 'View Analytics' })}
                         >
                           <BarChart3 className="w-4 h-4" />
                         </Link>
                         <button
                           onClick={() => setSelectedLinkForQr(link)}
                           className={`p-2 rounded-lg transition-colors ${link.qrCode ? 'text-primary-600 bg-primary-50 hover:bg-primary-100' : 'text-gray-400 hover:text-primary-600 hover:bg-primary-50'}`}
-                          title={link.qrCode ? "View QR Code" : "Generate QR Code"}
+                          title={link.qrCode ? t('dashboard.qr_modal_title') : t('dashboard.qr_generate')}
                         >
                           <QrCode className="w-4 h-4" />
                         </button>
@@ -533,7 +535,7 @@ export default function Dashboard() {
                           onClick={() => triggerDeleteLinkConfirm(link.shortCode)}
                           disabled={deletingCode === link.shortCode}
                           className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
-                          title="Delete link"
+                          title={t('common.delete_link', { defaultValue: 'Delete link' })}
                         >
                           {deletingCode === link.shortCode
                             ? <Loader2 className="w-4 h-4 animate-spin" />
@@ -550,9 +552,9 @@ export default function Dashboard() {
               {totalPages > 0 && (
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-6 border-t border-gray-100">
                   <div className="flex items-center gap-4 text-sm text-gray-500 flex-wrap justify-center">
-                    <span>Page {page + 1} of {totalPages}</span>
+                    <span>{t('pagination.page_info', { current: page + 1, total: totalPages })}</span>
                     <div className="flex items-center gap-2 border-l border-gray-200 pl-4">
-                      <span>Show:</span>
+                      <span>{t('pagination.show')}:</span>
                       <select
                         value={size}
                         onChange={(e) => {
@@ -597,7 +599,7 @@ export default function Dashboard() {
                       onClick={() => setPage(0)}
                       disabled={page === 0}
                       className="p-1.5 sm:p-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-gray-600"
-                      title="First Page"
+                      title={t('pagination.first')}
                     >
                       <ChevronsLeft className="w-4 h-4" />
                     </button>
@@ -605,7 +607,7 @@ export default function Dashboard() {
                       onClick={() => setPage(p => Math.max(0, p - 1))}
                       disabled={page === 0}
                       className="p-1.5 sm:p-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-gray-600"
-                      title="Previous Page"
+                      title={t('pagination.prev')}
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </button>
@@ -613,7 +615,7 @@ export default function Dashboard() {
                       onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                       disabled={page >= totalPages - 1}
                       className="p-1.5 sm:p-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-gray-600"
-                      title="Next Page"
+                      title={t('pagination.next')}
                     >
                       <ChevronRight className="w-4 h-4" />
                     </button>
@@ -621,7 +623,7 @@ export default function Dashboard() {
                       onClick={() => setPage(totalPages - 1)}
                       disabled={page >= totalPages - 1}
                       className="p-1.5 sm:p-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-gray-600"
-                      title="Last Page"
+                      title={t('pagination.last')}
                     >
                       <ChevronsRight className="w-4 h-4" />
                     </button>
@@ -639,7 +641,7 @@ export default function Dashboard() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden">
             <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-gray-900">QR Code</h3>
+              <h3 className="text-lg font-bold text-gray-900">{t('dashboard.qr_modal_title')}</h3>
               <button
                 onClick={() => setSelectedLinkForQr(null)}
                 className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-500"
@@ -660,7 +662,7 @@ export default function Dashboard() {
               ) : (
                 <div className="w-48 h-48 rounded-2xl bg-gray-50 border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-center p-6 mb-6">
                   <QrCode className="w-12 h-12 text-gray-300 mb-2" />
-                  <p className="text-sm text-gray-400 font-medium">No QR code generated yet</p>
+                  <p className="text-sm text-gray-400 font-medium">{t('dashboard.qr_not_generated')}</p>
                 </div>
               )}
 
@@ -672,7 +674,7 @@ export default function Dashboard() {
                     className="w-full py-3 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed text-white rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
                   >
                     {isGeneratingQr ? <Loader2 className="w-5 h-5 animate-spin" /> : <QrCode className="w-5 h-5" />}
-                    Generate QR Code
+                    {t('dashboard.qr_generate')}
                   </button>
                 ) : (
                   <button
@@ -681,18 +683,18 @@ export default function Dashboard() {
                     className="w-full py-3 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
                   >
                     {isDeletingQr ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />}
-                    Delete QR Code
+                    {t('dashboard.qr_delete')}
                   </button>
                 )}
 
                 {!user?.vip && user?.role !== 'ADMIN' && !selectedLinkForQr.qrCode && (
                   <p className="text-[10px] text-center text-amber-600 font-medium">
-                    QR codes are exclusive to VIP members.
+                    {t('dashboard.qr_vip_only')}
                   </p>
                 )}
 
                 <p className="text-[10px] text-center text-gray-400 font-medium">
-                  Scan to share {window.location.host}/r/{selectedLinkForQr.shortCode}
+                  {t('dashboard.qr_scan_share', { url: `${window.location.host}/r/${selectedLinkForQr.shortCode}` })}
                 </p>
               </div>
             </div>
@@ -709,9 +711,9 @@ export default function Dashboard() {
             </div>
 
             <div className="space-y-2">
-              <h3 className="text-xl font-bold text-gray-900">Delete QR Code?</h3>
+              <h3 className="text-xl font-bold text-gray-900">{t('dashboard.delete_qr_title')}</h3>
               <p className="text-gray-500 text-sm">
-                This will permanently remove the QR code for this link. You can always regenerate it later.
+                {t('dashboard.delete_qr_desc')}
               </p>
             </div>
 
@@ -721,14 +723,14 @@ export default function Dashboard() {
                 disabled={isDeletingQr}
                 className="w-full py-3 bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-white rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
               >
-                {isDeletingQr ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Yes, Delete QR Code'}
+                {isDeletingQr ? <Loader2 className="w-5 h-5 animate-spin" /> : t('dashboard.confirm_delete_qr')}
               </button>
               <button
                 onClick={() => { setShowQrDeleteConfirm(false); setQrCodeToRemove(null); }}
                 disabled={isDeletingQr}
                 className="w-full py-3 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl font-semibold transition-all"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
             </div>
           </div>
@@ -744,9 +746,9 @@ export default function Dashboard() {
             </div>
 
             <div className="space-y-2">
-              <h3 className="text-xl font-bold text-gray-900">Delete this link?</h3>
+              <h3 className="text-xl font-bold text-gray-900">{t('dashboard.delete_link_title')}</h3>
               <p className="text-gray-500 text-sm">
-                This action cannot be undone. All analytics data for this link will also be lost forever.
+                {t('dashboard.delete_link_desc')}
               </p>
             </div>
 
@@ -763,14 +765,14 @@ export default function Dashboard() {
                 className="w-full py-3 bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-white rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
               >
                 {deletingCode ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />}
-                Confirm Delete
+                {t('dashboard.confirm_delete_link')}
               </button>
               <button
                 onClick={() => { setShowLinkDeleteConfirm(false); setLinkToDelete(null); }}
                 disabled={!!deletingCode}
                 className="w-full py-3 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl font-semibold transition-all"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
             </div>
           </div>
