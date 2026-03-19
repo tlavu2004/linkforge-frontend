@@ -1,0 +1,45 @@
+{
+  "common": {
+    "loading": "Đang tải...",
+    "error": "Lỗi",
+    "success": "Thành công",
+    "cancel": "Hủy",
+    "confirm": "Xác nhận",
+    "delete": "Xóa",
+    "save": "Lưu",
+    "edit": "Sửa",
+    "back": "Quay lại",
+    "home": "Trang chủ"
+  },
+  "nav": {
+    "dashboard": "Bảng điều khiển",
+    "login": "Đăng nhập",
+    "register": "Đăng ký",
+    "logout": "Đăng xuất",
+    "vip": "Nâng cấp VIP",
+    "admin": "Quản trị"
+  },
+  "home": {
+    "title": "Rút gọn liên kết của bạn",
+    "subtitle": "Công cụ rút gọn URL mạnh mẽ với phân tích và hơn thế nữa.",
+    "shorten_btn": "Rút gọn",
+    "placeholder": "Nhập URL dài của bạn tại đây...",
+    "custom_alias": "Bí danh tùy chỉnh (tùy chọn)"
+  },
+  "login": {
+    "title": "Chào mừng trở lại",
+    "email": "Địa chỉ Email",
+    "password": "Mật khẩu",
+    "submit": "Đăng nhập",
+    "forgot_password": "Quên mật khẩu?",
+    "no_account": "Chưa có tài khoản? Đăng ký ngay"
+  },
+  "register": {
+    "title": "Tạo tài khoản",
+    "username": "Tên người dùng",
+    "email": "Địa chỉ Email",
+    "password": "Mật khẩu",
+    "submit": "Đăng ký",
+    "has_account": "Đã có tài khoản? Đăng nhập ngay"
+  }
+}

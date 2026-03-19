@@ -1,0 +1,45 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "save": "Save",
+    "edit": "Edit",
+    "back": "Back",
+    "home": "Home"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout",
+    "vip": "VIP Upgrade",
+    "admin": "Admin"
+  },
+  "home": {
+    "title": "Shorten your links",
+    "subtitle": "A powerful URL shortener with analytics and more.",
+    "shorten_btn": "Shorten",
+    "placeholder": "Enter your long URL here...",
+    "custom_alias": "Custom alias (optional)"
+  },
+  "login": {
+    "title": "Welcome back",
+    "email": "Email address",
+    "password": "Password",
+    "submit": "Sign in",
+    "forgot_password": "Forgot password?",
+    "no_account": "Don't have an account? Register"
+  },
+  "register": {
+    "title": "Create account",
+    "username": "Username",
+    "email": "Email address",
+    "password": "Password",
+    "submit": "Register",
+    "has_account": "Already have an account? Login"
+  }
+}
