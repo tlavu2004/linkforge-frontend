@@ -429,7 +429,6 @@ export default function Dashboard() {
                 {t('dashboard.my_links')}
               </h3>
               <p className="text-sm text-gray-500 mt-1">
-                <span className="font-bold text-gray-900">{totalElements || 0}</span>{' '}
                 {totalElements === 1 ? t('dashboard.total_links', { count: totalElements }) : t('dashboard.total_links_plural', { count: totalElements })}
               </p>
             </div>
