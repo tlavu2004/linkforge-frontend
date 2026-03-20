@@ -1,28 +1,62 @@
 # LinkForge - Modern Frontend Interface
 
-A modern and intuitive user interface for LinkForge, built with **React**, **TypeScript**, and **Vite**. Provides the dashboard, link management, VIP payment flow, and admin panel that connects to the LinkForge Backend API.
+LinkForge Frontend is a state-of-the-art web interface built with **React 19**, **TypeScript**, and **Tailwind CSS 4**. It provides a seamless, high-performance experience for managing short links, viewing real-time analytics, and handling VIP subscriptions.
+
+![Dashboard Preview](docs/images/dashboard_overview.png)
 
 > [!IMPORTANT]
-> This frontend requires the **Backend API** to be running. Please read the Backend README for full setup and feature documentation:
-> [LinkForge Backend](https://github.com/tlavu2004/linkforge-backend)
+> This is the **Frontend** repository. It requires the [LinkForge Backend](https://github.com/tlavu2004/linkforge-backend) to be running to function correctly.
+
+---
+
+## Key Features
+
+### Advanced Analytics Dashboard
+Visualize your link performance with beautiful, interactive charts powered by **Recharts**:
+- **Geolocation**: Map-based or list view of visitor countries and cities.
+- **Device & Browser**: Breakdown of mobile vs. desktop and specific browsers.
+- **Traffic Sources**: Identify top referrers and source websites.
+- **Time Trends**: Interactive line charts showing click volume over hours, days, or months.
+
+### Full Localization (i18n)
+Native support for **English** and **Vietnamese**:
+- Instant language switching without page reload (using `react-i18next`).
+- Localized dates, numbers, and currency formatting.
+- Automatic language detection based on browser settings.
+
+### Secure User & Admin Panel
+- **User Dashboard**: Create, edit, search, and delete your links in a clean, paginated table.
+- **VIP Flow**: Integrated checkout UI for VIP upgrades with automated payment return handling.
+- **Admin Center**: Management interface to oversee all users, their links, and project-wide statistics.
+
+### Responsive & Premium Design
+- **Tailwind CSS 4**: Utilizing the latest CSS utility framework for a sleek, glassmorphism-inspired design.
+- **Lucide Icons**: Consistent, high-quality iconography across the entire app.
+- **Optimized Performance**: Built with **Vite 7** for near-instant cold starts and hot module replacement (HMR).
 
 ---
 
 ## Tech Stack
 
-- **Framework:** React 18+
-- **Language:** TypeScript
-- **Build Tool:** Vite
-- **Styling:** Modern CSS
-- **Deployment:** Vercel (Recommended)
+| Category | Technology |
+| :--- | :--- |
+| **Framework** | [React 19](https://react.dev/) |
+| **Build Tool** | [Vite 7](https://vitejs.dev/) |
+| **Styling** | [Tailwind CSS 4](https://tailwindcss.com/) |
+| **State Management** | [Zustand](https://zustand-demo.pmnd.rs/) |
+| **Routing** | [React Router 7](https://reactrouter.com/) |
+| **Charts** | [Recharts](https://recharts.org/) |
+| **Icons** | [Lucide React](https://lucide.dev/) |
+| **i18n** | [i18next](https://www.i18next.com/) |
+| **HTTP Client** | [Axios](https://axios-http.com/) |
 
 ---
 
 ## Getting Started
 
 ### Prerequisites
-- Node.js 18+
-- npm or yarn
+- **Node.js 18+**
+- **npm** or **yarn**
 
 ### Installation
 
@@ -34,40 +68,35 @@ cd linkforge-frontend
 # 2. Install dependencies
 npm install
 
-# 3. Create environment file
+# 3. Configure Environment
 cp .env.example .env
 ```
 
-Update `VITE_API_BASE_URL` in `.env` to point to your running backend (default: `http://localhost:8080`).
+### Environment Configuration
+Update `.env` with your Backend API URL:
+```env
+VITE_API_URL=http://localhost:8080
+```
 
-### Development
-
+### Running Locally
 ```bash
 npm run dev
 ```
-
-The app will be available at `http://localhost:5173`.
-
-### Production Build
-
-```bash
-npm run build
-```
+The application will be available at `http://localhost:5173`.
 
 ---
 
 ## Deployment
 
-The project includes `vercel.json` for one-click deployment to **Vercel**. Make sure to configure the `VITE_API_BASE_URL` environment variable in Vercel's dashboard to point to your production backend URL.
+### Vercel (Recommended)
+This project is optimized for **Vercel**. Simply connect your GitHub repository and set the `VITE_API_URL` environment variable in the Vercel Dashboard.
 
 ---
 
-## Note
-
-All business logic, API documentation, payment integration details, and architecture decisions are documented in the [Backend README](https://github.com/tlavu2004/linkforge-backend). Please read it thoroughly for a complete understanding of the system.
+## Author
+- **Trương Lê Anh Vũ** - [tlavu2004](https://github.com/tlavu2004)
 
 ---
 
 ## License
-
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
